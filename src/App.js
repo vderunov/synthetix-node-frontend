@@ -1,6 +1,7 @@
-import { QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { queryClient } from '../lib/useSynthetix';
+
+const queryClient = new QueryClient();
 
 export function App() {
   return (

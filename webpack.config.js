@@ -46,9 +46,7 @@ const babelRule = {
   test: /\.(js)$/,
   include: [
     // Only include code in the src to ensure that library functions do not need compilation
-    /cypress/,
     /src/,
-    ...(isTest ? [/lib/] : []), // for tests coverage
   ],
   use: {
     loader: require.resolve('babel-loader'),
@@ -87,7 +85,7 @@ module.exports = {
   ],
 
   resolve: {
-    extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs'],
+    extensions: ['.js'],
   },
 
   module: {
