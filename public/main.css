@@ -1,0 +1,53 @@
+html, body {
+    font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #bde1e9;
+    background-color: #06061B;
+}
+
+body {
+    padding-top: 1rem;
+}
+
+a {
+    text-decoration: none;
+    color: #00D1FF;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.error {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #fc4747;
+}
+
+.loading {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: #d741f3;
+}
+
+section {
+    margin: 0 0 1rem 0;
+    padding: 0 1rem 1rem 1rem;
+    border-bottom: 1px solid #141432;
+}
+
+h1 {
+    margin: 0 0 1rem 0;
+    padding: 0 1rem 1rem 1rem;
+    border-bottom: 1px solid #141432;
+}
+
+h2 {
+    margin: 0 0 1rem 0;
+    padding: 0;
+}
+
+p {
+    margin: 0 0 0.5rem 0;
+}
