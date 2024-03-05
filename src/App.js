@@ -13,7 +13,6 @@ export function App() {
           ) : (
             <button
               type="button"
-              className="connect"
               onClick={async () => {
                 try {
                   await window.ethereum.request({ method: 'eth_requestAccounts' });
