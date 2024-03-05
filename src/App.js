@@ -1,15 +1,30 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-
-const queryClient = new QueryClient();
+import { useSynthetix } from './useSynthetix';
 
 export function App() {
+  const [synthetix] = useSynthetix();
+
   return (
-    <>
-      <QueryClientProvider client={queryClient}>
-        <h1>Hello World</h1>
-        {process.env.NODE_ENV === 'test' ? null : <ReactQueryDevtools />}
-      </QueryClientProvider>
-    </>
+    <div className="navigation">
+      <div className="flexContainer">
+        <h2>Synthetix node Frontend</h2>
+        <div className="rightNav">
+          {synthetix.walletAddress ? (
+            <button type="button">Login</button>
+          ) : (
+            <button
+              type="button"
+              className="connect"
+              onClick={async () => {
+                try {
+                  await window.ethereum.request({ method: 'eth_requestAccounts' });
+                } catch {}
+              }}
+            >
+              Connect
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
