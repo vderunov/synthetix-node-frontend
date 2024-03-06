@@ -11,14 +11,7 @@ export function App() {
           {synthetix.walletAddress ? (
             <button type="button">Login</button>
           ) : (
-            <button
-              type="button"
-              onClick={async () => {
-                try {
-                  await window.ethereum.request({ method: 'eth_requestAccounts' });
-                } catch {}
-              }}
-            >
+            <button type="button" onClick={synthetix.connect}>
               Connect
             </button>
           )}

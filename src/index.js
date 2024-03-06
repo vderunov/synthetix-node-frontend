@@ -35,16 +35,18 @@ async function run() {
   const accounts = provider ? await provider.listAccounts() : [];
   const walletAddress = accounts[0] ? accounts[0].address.toLowerCase() : undefined;
 
-  try {
-    await window.ethereum.request({
-      method: 'eth_requestAccounts',
-    });
-  } catch {}
+  const connect = async () => {
+    try {
+      await window.ethereum.request({
+        method: 'eth_requestAccounts',
+      });
+    } catch {}
+  };
 
   const root = ReactDOM.createRoot(document.querySelector('#app'));
   root.render(
     <React.StrictMode>
-      <SynthetixProvider {...{ walletAddress }}>
+      <SynthetixProvider {...{ walletAddress, connect }}>
         <WalletWatcher>
           <QueryClientProvider client={queryClient}>
             <App />

@@ -12,6 +12,7 @@ function updateObject(oldObject, newValues) {
 
 const SYNTHETIX_INITIAL_STATE = Object.freeze({
   walletAddress: undefined,
+  connect: () => {},
 });
 
 export const SYNTHETIX_STATE_KEYS = Object.keys(SYNTHETIX_INITIAL_STATE);
