@@ -2,8 +2,8 @@ import { useMutation } from '@tanstack/react-query';
 import { useSynthetix } from './useSynthetix';
 
 export function App() {
-  const [synthetix] = useSynthetix();
-  const { walletAddress, connect } = synthetix;
+  const [synthetix, updateSynthetix] = useSynthetix();
+  const { walletAddress, connect, signature } = synthetix;
 
   const { mutate, isPending, isError, error, isSuccess } = useMutation({
     mutationFn: async (data) => {
@@ -21,6 +21,7 @@ export function App() {
 
       return response.json();
     },
+    onSuccess: ({ signature }) => updateSynthetix({ signature }),
   });
 
   return (
@@ -28,13 +29,17 @@ export function App() {
       <div className="flexContainer">
         <h2>Synthetix node Frontend</h2>
         <div className="rightNav">
-          {walletAddress ? (
+          {!walletAddress ? (
+            <button type="button" onClick={connect}>
+              Connect
+            </button>
+          ) : !signature ? (
             <button type="button" onClick={() => mutate({ walletAddress })}>
               Login
             </button>
           ) : (
-            <button type="button" onClick={connect}>
-              Connect
+            <button type="button" onClick={() => {}}>
+              Logout
             </button>
           )}
         </div>
