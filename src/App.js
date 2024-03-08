@@ -1,26 +1,34 @@
 import { useMutation } from '@tanstack/react-query';
 import { useSynthetix } from './useSynthetix';
 
+const makeRequest = async (endpoint, data) => {
+  const response = await fetch(`http://localhost:3005/${endpoint}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error('Network response was not ok');
+  }
+  return response.json();
+};
+
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
-  const { walletAddress, connect, signature } = synthetix;
+  const { walletAddress, connect, signature, signer } = synthetix;
 
-  const { mutate, isPending, isError, error, isSuccess } = useMutation({
-    mutationFn: async (data) => {
-      const response = await fetch('http://localhost:3005/signup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
+  const signupMutation = useMutation({
+    mutationFn: (data) => makeRequest('signup', data),
+    onSuccess: ({ nonce }) =>
+      signer.signMessage(nonce).then((signedMessage) => {
+        verificationMutation.mutate({ signedMessage });
+      }),
+  });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      return response.json();
-    },
+  const verificationMutation = useMutation({
+    mutationFn: (data) => makeRequest('verify', data),
     onSuccess: ({ signature }) => updateSynthetix({ signature }),
   });
 
@@ -34,7 +42,7 @@ export function App() {
               Connect
             </button>
           ) : !signature ? (
-            <button type="button" onClick={() => mutate({ walletAddress })}>
+            <button type="button" onClick={() => signupMutation.mutate({ walletAddress })}>
               Login
             </button>
           ) : (
@@ -44,9 +52,11 @@ export function App() {
           )}
         </div>
       </div>
-      {isSuccess && <div>Signup successful</div>}
-      {isPending && <div>Loading..</div>}
-      {isError && <div>Error: {error.message}</div>}
+      {/* temporary solution for process tracking */}
+      {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
+      {signupMutation.isPending || (verificationMutation.isPending && <div>Loading..</div>)}
+      {signupMutation.isError && <div>Error: {signupMutation.error.message}</div>}
+      {verificationMutation.isError && <div>Error: {verificationMutation.error.message}</div>}
     </div>
   );
 }

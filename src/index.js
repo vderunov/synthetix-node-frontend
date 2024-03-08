@@ -34,6 +34,7 @@ async function run() {
   const provider = window.ethereum ? new ethers.BrowserProvider(window.ethereum) : undefined;
   const accounts = provider ? await provider.listAccounts() : [];
   const walletAddress = accounts[0] ? accounts[0].address.toLowerCase() : undefined;
+  const signer = provider ? await provider.getSigner() : undefined;
 
   const connect = async () => {
     try {
@@ -46,7 +47,7 @@ async function run() {
   const root = ReactDOM.createRoot(document.querySelector('#app'));
   root.render(
     <React.StrictMode>
-      <SynthetixProvider {...{ walletAddress, connect }}>
+      <SynthetixProvider {...{ walletAddress, connect, signer }}>
         <WalletWatcher>
           <QueryClientProvider client={queryClient}>
             <App />
