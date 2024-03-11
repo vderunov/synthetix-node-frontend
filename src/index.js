@@ -5,11 +5,12 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { SynthetixProvider, useSynthetix } from './useSynthetix';
+import { getTokensFromLocalStorage } from './utils';
 
 const queryClient = new QueryClient();
 
 function WalletWatcher({ children }) {
-  const [synthetix, updateSynthetix] = useSynthetix();
+  const [, updateSynthetix] = useSynthetix();
 
   useEffect(() => {
     if (!window.ethereum) {
@@ -17,11 +18,12 @@ function WalletWatcher({ children }) {
     }
 
     async function onAccountsChanged(accounts) {
-      window.localStorage.clear();
+      const provider = window.ethereum ? new ethers.BrowserProvider(window.ethereum) : undefined;
+      const signer = provider ? await provider.getSigner() : undefined;
       updateSynthetix({
         walletAddress: accounts[0] ? accounts[0].toLowerCase() : undefined,
-        token: undefined,
-        signer: synthetix.provider ? await synthetix.provider.getSigner() : undefined,
+        provider,
+        signer,
       });
     }
 
@@ -30,7 +32,7 @@ function WalletWatcher({ children }) {
     return () => {
       window.ethereum.removeListener('accountsChanged', onAccountsChanged);
     };
-  }, [synthetix.provider, updateSynthetix]);
+  }, [updateSynthetix]);
 
   return children;
 }
@@ -52,7 +54,9 @@ async function run() {
   const root = ReactDOM.createRoot(document.querySelector('#app'));
   root.render(
     <React.StrictMode>
-      <SynthetixProvider {...{ walletAddress, connect, provider, signer }}>
+      <SynthetixProvider
+        {...{ walletAddress, connect, provider, signer, tokens: getTokensFromLocalStorage() }}
+      >
         <WalletWatcher>
           <QueryClientProvider client={queryClient}>
             <App />

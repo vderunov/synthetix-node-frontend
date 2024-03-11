@@ -9,11 +9,6 @@ dotenv.config();
 const isProd = process.env.NODE_ENV === 'production';
 const isTest = process.env.NODE_ENV === 'test';
 
-const envKeys = Object.keys(process.env).reduce((prev, cur) => {
-  prev[`process.env.${cur}`] = JSON.stringify(process.env[cur]);
-  return prev;
-}, {});
-
 const htmlPlugin = new HtmlWebpackPlugin({
   template: './index.html',
   title: 'Synthetix node frontend',
@@ -85,7 +80,9 @@ module.exports = {
 
   plugins: [
     htmlPlugin,
-    new webpack.DefinePlugin(envKeys),
+    new webpack.DefinePlugin({
+      'process.env.API_URL': JSON.stringify(process.env.API_URL),
+    }),
     new webpack.NormalModuleReplacementPlugin(
       /^debug$/,
       path.resolve(path.dirname(require.resolve('debug/package.json')), 'src', 'browser.js')

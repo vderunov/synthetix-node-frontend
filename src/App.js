@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useSynthetix } from './useSynthetix';
-import { getApiUrl } from './utils';
+import { getApiUrl, getTokensFromLocalStorage } from './utils';
 
 const makeUnauthenticatedRequest = async (endpoint, data) => {
   const response = await fetch(`${getApiUrl()}${endpoint}`, {
@@ -18,7 +18,7 @@ const makeUnauthenticatedRequest = async (endpoint, data) => {
 
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
-  const { walletAddress, connect, token, signer } = synthetix;
+  const { walletAddress, connect, tokens, signer } = synthetix;
 
   const signupMutation = useMutation({
     mutationFn: (data) => makeUnauthenticatedRequest('signup', data),
@@ -31,10 +31,19 @@ export function App() {
   const verificationMutation = useMutation({
     mutationFn: (data) => makeUnauthenticatedRequest('verify', data),
     onSuccess: ({ token }) => {
-      window.localStorage.setItem('token', token);
-      updateSynthetix({ token });
+      const tokensFromLocalStorage = getTokensFromLocalStorage();
+      tokensFromLocalStorage[walletAddress] = token;
+      window.localStorage.setItem('tokens', JSON.stringify(tokensFromLocalStorage));
+      updateSynthetix({ tokens: tokensFromLocalStorage });
     },
   });
+
+  const logout = () => {
+    const tokens = getTokensFromLocalStorage();
+    delete tokens[walletAddress];
+    window.localStorage.setItem('tokens', JSON.stringify(tokens));
+    updateSynthetix({ tokens });
+  };
 
   return (
     <div className="navigation">
@@ -45,24 +54,19 @@ export function App() {
             <button type="button" onClick={connect}>
               Connect
             </button>
-          ) : !token ? (
+          ) : !tokens[walletAddress] ? (
             <button type="button" onClick={() => signupMutation.mutate({ walletAddress })}>
               Login
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={() => {
-                window.localStorage.clear();
-                updateSynthetix({ token: undefined });
-              }}
-            >
+            <button type="button" onClick={logout}>
               Logout
             </button>
           )}
         </div>
       </div>
       {/* temporary solution for process tracking */}
+      {`Account: ${walletAddress.substring(0, 6)}`}
       {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
       {signupMutation.isPending || (verificationMutation.isPending && <div>Loading..</div>)}
       {signupMutation.isError && <div>Error: {signupMutation.error.message}</div>}

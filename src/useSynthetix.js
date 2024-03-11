@@ -13,7 +13,7 @@ function updateObject(oldObject, newValues) {
 const SYNTHETIX_INITIAL_STATE = Object.freeze({
   walletAddress: undefined,
   connect: () => {},
-  token: window.localStorage.getItem('token'),
+  tokens: {},
   provider: undefined,
   signer: undefined,
 });
