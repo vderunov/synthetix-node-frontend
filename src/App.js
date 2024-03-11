@@ -1,8 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
 import { useSynthetix } from './useSynthetix';
+import { getApiUrl } from './utils';
 
-const makeRequest = async (endpoint, data) => {
-  const response = await fetch(`http://localhost:3005/${endpoint}`, {
+const makeUnauthenticatedRequest = async (endpoint, data) => {
+  const response = await fetch(`${getApiUrl()}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -17,19 +18,22 @@ const makeRequest = async (endpoint, data) => {
 
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
-  const { walletAddress, connect, signature, signer } = synthetix;
+  const { walletAddress, connect, token, signer } = synthetix;
 
   const signupMutation = useMutation({
-    mutationFn: (data) => makeRequest('signup', data),
+    mutationFn: (data) => makeUnauthenticatedRequest('signup', data),
     onSuccess: ({ nonce }) =>
       signer.signMessage(nonce).then((signedMessage) => {
-        verificationMutation.mutate({ signedMessage });
+        verificationMutation.mutate({ nonce, signedMessage });
       }),
   });
 
   const verificationMutation = useMutation({
-    mutationFn: (data) => makeRequest('verify', data),
-    onSuccess: ({ signature }) => updateSynthetix({ signature }),
+    mutationFn: (data) => makeUnauthenticatedRequest('verify', data),
+    onSuccess: ({ token }) => {
+      window.localStorage.setItem('token', token);
+      updateSynthetix({ token });
+    },
   });
 
   return (
@@ -41,12 +45,18 @@ export function App() {
             <button type="button" onClick={connect}>
               Connect
             </button>
-          ) : !signature ? (
+          ) : !token ? (
             <button type="button" onClick={() => signupMutation.mutate({ walletAddress })}>
               Login
             </button>
           ) : (
-            <button type="button" onClick={() => {}}>
+            <button
+              type="button"
+              onClick={() => {
+                window.localStorage.clear();
+                updateSynthetix({ token: undefined });
+              }}
+            >
               Logout
             </button>
           )}
