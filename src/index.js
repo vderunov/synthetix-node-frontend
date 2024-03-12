@@ -5,7 +5,7 @@ import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { SynthetixProvider, useSynthetix } from './useSynthetix';
-import { getTokensFromLocalStorage } from './utils';
+import { restoreToken } from './utils';
 
 const queryClient = new QueryClient();
 
@@ -20,8 +20,12 @@ function WalletWatcher({ children }) {
     async function onAccountsChanged(accounts) {
       const provider = window.ethereum ? new ethers.BrowserProvider(window.ethereum) : undefined;
       const signer = provider ? await provider.getSigner() : undefined;
+      const walletAddress = accounts[0] ? accounts[0].toLowerCase() : undefined;
+      const token = restoreToken({ walletAddress });
+
       updateSynthetix({
-        walletAddress: accounts[0] ? accounts[0].toLowerCase() : undefined,
+        walletAddress,
+        token,
         provider,
         signer,
       });
@@ -55,7 +59,7 @@ async function run() {
   root.render(
     <React.StrictMode>
       <SynthetixProvider
-        {...{ walletAddress, connect, provider, signer, tokens: getTokensFromLocalStorage() }}
+        {...{ walletAddress, connect, provider, signer, token: restoreToken({ walletAddress }) }}
       >
         <WalletWatcher>
           <QueryClientProvider client={queryClient}>
