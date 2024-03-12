@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { useSynthetix } from './useSynthetix';
+import { SYNTHETIX_INITIAL_STATE, useSynthetix } from './useSynthetix';
 import { getApiUrl, saveToken } from './utils';
 
 const makeUnauthenticatedRequest = async (endpoint, data) => {
@@ -38,7 +38,8 @@ export function App() {
 
   const logout = () => {
     window.localStorage.clear();
-    updateSynthetix({ token: undefined });
+    updateSynthetix(SYNTHETIX_INITIAL_STATE);
+    window.location.reload();
   };
 
   return (
