@@ -10,7 +10,7 @@ function updateObject(oldObject, newValues) {
   );
 }
 
-export const SYNTHETIX_INITIAL_STATE = Object.freeze({
+const SYNTHETIX_INITIAL_STATE = Object.freeze({
   walletAddress: undefined,
   connect: () => {},
   token: undefined,
