@@ -2,6 +2,9 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
+const dotenv = require('dotenv');
+
+dotenv.config();
 
 const isProd = process.env.NODE_ENV === 'production';
 const isTest = process.env.NODE_ENV === 'test';
@@ -77,6 +80,9 @@ module.exports = {
 
   plugins: [
     htmlPlugin,
+    new webpack.DefinePlugin({
+      'process.env.API_URL': JSON.stringify(process.env.API_URL),
+    }),
     new webpack.NormalModuleReplacementPlugin(
       /^debug$/,
       path.resolve(path.dirname(require.resolve('debug/package.json')), 'src', 'browser.js')

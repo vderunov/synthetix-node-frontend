@@ -1,8 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
 import { useSynthetix } from './useSynthetix';
+import { getApiUrl, saveToken } from './utils';
 
-const makeRequest = async (endpoint, data) => {
-  const response = await fetch(`http://localhost:3005/${endpoint}`, {
+const makeUnauthenticatedRequest = async (endpoint, data) => {
+  const response = await fetch(`${getApiUrl()}${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -17,19 +18,22 @@ const makeRequest = async (endpoint, data) => {
 
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
-  const { walletAddress, connect, signature, signer } = synthetix;
+  const { walletAddress, token, logout, connect, signer } = synthetix;
 
   const signupMutation = useMutation({
-    mutationFn: (data) => makeRequest('signup', data),
+    mutationFn: (data) => makeUnauthenticatedRequest('signup', data),
     onSuccess: ({ nonce }) =>
       signer.signMessage(nonce).then((signedMessage) => {
-        verificationMutation.mutate({ signedMessage });
+        verificationMutation.mutate({ nonce, signedMessage });
       }),
   });
 
   const verificationMutation = useMutation({
-    mutationFn: (data) => makeRequest('verify', data),
-    onSuccess: ({ signature }) => updateSynthetix({ signature }),
+    mutationFn: (data) => makeUnauthenticatedRequest('verify', data),
+    onSuccess: ({ token }) => {
+      saveToken({ walletAddress, token });
+      updateSynthetix({ token });
+    },
   });
 
   return (
@@ -37,22 +41,32 @@ export function App() {
       <div className="flexContainer">
         <h2>Synthetix node Frontend</h2>
         <div className="rightNav">
-          {!walletAddress ? (
-            <button type="button" onClick={connect}>
-              Connect
-            </button>
-          ) : !signature ? (
-            <button type="button" onClick={() => signupMutation.mutate({ walletAddress })}>
-              Login
-            </button>
-          ) : (
-            <button type="button" onClick={() => {}}>
+          {walletAddress && token ? (
+            <button type="button" onClick={logout}>
               Logout
             </button>
-          )}
+          ) : null}
+
+          {walletAddress && !token ? (
+            <>
+              <button type="button" onClick={() => signupMutation.mutate({ walletAddress })}>
+                Login
+              </button>
+              <button type="button" onClick={logout}>
+                Disconnect
+              </button>
+            </>
+          ) : null}
+
+          {!walletAddress && !token ? (
+            <button type="button" onClick={async () => updateSynthetix(await connect())}>
+              Connect
+            </button>
+          ) : null}
         </div>
       </div>
       {/* temporary solution for process tracking */}
+      <h2>{`Account: ${walletAddress?.substring(0, 6)}`}</h2>
       {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
       {signupMutation.isPending || (verificationMutation.isPending && <div>Loading..</div>)}
       {signupMutation.isError && <div>Error: {signupMutation.error.message}</div>}
