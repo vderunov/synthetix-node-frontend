@@ -42,24 +42,51 @@ function WalletWatcher({ children }) {
 }
 
 async function run() {
-  const provider = window.ethereum ? new ethers.BrowserProvider(window.ethereum) : undefined;
-  const accounts = provider ? await provider.listAccounts() : [];
-  const walletAddress = accounts[0] ? accounts[0].address.toLowerCase() : undefined;
-  const signer = provider ? await provider.getSigner() : undefined;
+  let provider;
+  let signer;
+  let walletAddress;
+
+  try {
+    if (window.localStorage.getItem('connected') === 'true') {
+      provider = window.ethereum ? new ethers.BrowserProvider(window.ethereum) : undefined;
+      const accounts = provider ? await provider.listAccounts() : [];
+      walletAddress = accounts[0] ? accounts[0].address.toLowerCase() : undefined;
+      signer = provider && walletAddress ? await provider.getSigner() : undefined;
+    }
+  } catch (err) {
+    console.error('Failed to set connection:', err);
+  }
 
   const connect = async () => {
     try {
-      await window.ethereum.request({
-        method: 'eth_requestAccounts',
-      });
-    } catch {}
+      const provider = window.ethereum ? new ethers.BrowserProvider(window.ethereum) : undefined;
+      const signer = provider ? await provider.getSigner() : undefined;
+      const walletAddress = signer.address.toLowerCase();
+      const token = restoreToken({ walletAddress });
+      window.localStorage.setItem('connected', 'true');
+      return { provider, signer, walletAddress, token };
+    } catch {
+      return {};
+    }
+  };
+
+  const logout = () => {
+    window.localStorage.clear();
+    window.location.reload();
   };
 
   const root = ReactDOM.createRoot(document.querySelector('#app'));
   root.render(
     <React.StrictMode>
       <SynthetixProvider
-        {...{ walletAddress, connect, provider, signer, token: restoreToken({ walletAddress }) }}
+        {...{
+          walletAddress,
+          connect,
+          logout,
+          provider,
+          signer,
+          token: restoreToken({ walletAddress }),
+        }}
       >
         <WalletWatcher>
           <QueryClientProvider client={queryClient}>

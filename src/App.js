@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { SYNTHETIX_INITIAL_STATE, useSynthetix } from './useSynthetix';
+import { useSynthetix } from './useSynthetix';
 import { getApiUrl, saveToken } from './utils';
 
 const makeUnauthenticatedRequest = async (endpoint, data) => {
@@ -18,7 +18,7 @@ const makeUnauthenticatedRequest = async (endpoint, data) => {
 
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
-  const { walletAddress, connect, token, signer } = synthetix;
+  const { walletAddress, token, logout, connect, signer } = synthetix;
 
   const signupMutation = useMutation({
     mutationFn: (data) => makeUnauthenticatedRequest('signup', data),
@@ -36,33 +36,37 @@ export function App() {
     },
   });
 
-  const logout = () => {
-    window.localStorage.clear();
-    updateSynthetix(SYNTHETIX_INITIAL_STATE);
-  };
-
   return (
     <div className="navigation">
       <div className="flexContainer">
         <h2>Synthetix node Frontend</h2>
         <div className="rightNav">
-          {!walletAddress ? (
-            <button type="button" onClick={connect}>
-              Connect
-            </button>
-          ) : !token ? (
-            <button type="button" onClick={() => signupMutation.mutate({ walletAddress })}>
-              Login
-            </button>
-          ) : (
+          {walletAddress && token ? (
             <button type="button" onClick={logout}>
               Logout
             </button>
-          )}
+          ) : null}
+
+          {walletAddress && !token ? (
+            <>
+              <button type="button" onClick={() => signupMutation.mutate({ walletAddress })}>
+                Login
+              </button>
+              <button type="button" onClick={logout}>
+                Disconnect
+              </button>
+            </>
+          ) : null}
+
+          {!walletAddress && !token ? (
+            <button type="button" onClick={async () => updateSynthetix(await connect())}>
+              Connect
+            </button>
+          ) : null}
         </div>
       </div>
       {/* temporary solution for process tracking */}
-      {`Account: ${walletAddress?.substring(0, 6)}`}
+      <h2>{`Account: ${walletAddress?.substring(0, 6)}`}</h2>
       {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
       {signupMutation.isPending || (verificationMutation.isPending && <div>Loading..</div>)}
       {signupMutation.isError && <div>Error: {signupMutation.error.message}</div>}
