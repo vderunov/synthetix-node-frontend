@@ -1,0 +1,12 @@
+{
+  "build": {
+    "image": "node:alpine",
+    "command": "webpack-cli serve --config webpack.config.js && echo $SOME_ENV",
+    "publicDir": "dist",
+    "baseDir": "frontend",
+    "environment": {
+      "SOME_ENV": "Build finished!",
+      "API_URL": "http://localhost:3005/"
+    }
+  }
+}
