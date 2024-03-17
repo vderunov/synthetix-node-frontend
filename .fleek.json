@@ -1,6 +1,6 @@
 {
   "build": {
-    "image": "node:alpine",
+    "image": "node:lts",
     "command": "yarn install && yarn start && echo $SOME_ENV",
     "publicDir": "dist",
     "baseDir": ".",
