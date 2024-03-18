@@ -59,6 +59,11 @@ const babelRule = {
   },
 };
 
+const cssRule = {
+  test: /\.css$/,
+  use: [require.resolve('style-loader'), require.resolve('css-loader')],
+};
+
 module.exports = {
   devtool: isProd ? 'inline-source-map' : isTest ? false : 'source-map',
   devServer,
@@ -95,6 +100,6 @@ module.exports = {
   },
 
   module: {
-    rules: [babelRule],
+    rules: [babelRule, cssRule],
   },
 };
