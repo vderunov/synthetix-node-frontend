@@ -6,6 +6,7 @@
   "author": "Synthetix",
   "license": "MIT",
   "scripts": {
+    "build": "NODE_ENV=production webpack --config webpack.config.js",
     "start": "webpack-cli serve --config webpack.config.js",
     "lint": "biome check --apply ."
   },
