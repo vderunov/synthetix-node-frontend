@@ -7,6 +7,8 @@ import { App } from './App';
 import { SynthetixProvider, useSynthetix } from './useSynthetix';
 import { restoreToken } from './utils';
 
+import './main.css';
+
 const queryClient = new QueryClient();
 
 function WalletWatcher({ children }) {

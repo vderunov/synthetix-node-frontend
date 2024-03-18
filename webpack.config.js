@@ -1,5 +1,6 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const webpack = require('webpack');
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 const dotenv = require('dotenv');
@@ -12,6 +13,7 @@ const isTest = process.env.NODE_ENV === 'test';
 const htmlPlugin = new HtmlWebpackPlugin({
   template: './index.html',
   title: 'Synthetix node frontend',
+  favicon: './public/favicon.ico',
   scriptLoading: 'defer',
   minify: false,
   hash: false,
@@ -59,6 +61,18 @@ const babelRule = {
   },
 };
 
+const cssRule = {
+  test: /\.css$/,
+  use: [
+    isProd ? MiniCssExtractPlugin.loader : require.resolve('style-loader'),
+    require.resolve('css-loader'),
+  ],
+};
+
+const extractPlugin = new MiniCssExtractPlugin({
+  filename: '[name].css',
+});
+
 module.exports = {
   devtool: isProd ? 'inline-source-map' : isTest ? false : 'source-map',
   devServer,
@@ -70,7 +84,7 @@ module.exports = {
   },
 
   output: {
-    path: path.resolve(__dirname, 'dist/ethers'),
+    path: path.resolve(__dirname, 'dist'),
     publicPath: '',
     filename: '[name].js',
     chunkFilename: '[name].js',
@@ -88,6 +102,7 @@ module.exports = {
       path.resolve(path.dirname(require.resolve('debug/package.json')), 'src', 'browser.js')
     ),
     ...(isProd ? [] : isTest ? [] : [new ReactRefreshWebpackPlugin({ overlay: false })]),
+    ...(isProd ? [extractPlugin] : []),
   ],
 
   resolve: {
@@ -95,6 +110,6 @@ module.exports = {
   },
 
   module: {
-    rules: [babelRule],
+    rules: [babelRule, cssRule],
   },
 };
