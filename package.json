@@ -5,6 +5,7 @@
   "repository": "synthetix-node-frontend",
   "author": "Synthetix",
   "license": "MIT",
+  "homepage": ".",
   "scripts": {
     "build": "NODE_ENV=production webpack-cli build --config webpack.config.js",
     "start": "webpack-cli serve --config webpack.config.js",
