@@ -13,6 +13,7 @@ const isTest = process.env.NODE_ENV === 'test';
 const htmlPlugin = new HtmlWebpackPlugin({
   template: './index.html',
   title: 'Synthetix node frontend',
+  favicon: './public/favicon.ico',
   scriptLoading: 'defer',
   minify: false,
   hash: false,
