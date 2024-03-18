@@ -70,7 +70,7 @@ module.exports = {
   },
 
   output: {
-    path: path.resolve(__dirname, 'dist/ethers'),
+    path: path.resolve(__dirname, 'dist'),
     publicPath: '',
     filename: '[name].js',
     chunkFilename: '[name].js',
