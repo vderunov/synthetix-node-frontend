@@ -1,5 +1,5 @@
 import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useSynthetix } from './useSynthetix';
 import { getApiUrl, getIpfsUrl, saveToken } from './utils';
 
@@ -25,7 +25,9 @@ const makeUnauthenticatedRequest = async (endpoint, data) => {
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
   const { walletAddress, token, logout, connect, signer } = synthetix;
+  const fileUpload = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [fileName, setFileName] = useState('');
   const [image, setImage] = useState('');
 
   const signupMutation = useMutation({
@@ -106,11 +108,22 @@ export function App() {
       {/* before realization on the backend */}
       {token ? (
         <form onSubmit={handleFormSubmit}>
-          <input
-            type="file"
-            accept=".png"
-            onChange={(event) => setSelectedFile(event.target.files[0])}
-          />
+          <div>
+            <button type="button" onClick={() => fileUpload.current.click()}>
+              Select File
+            </button>
+            <input
+              type="file"
+              accept=".png"
+              ref={fileUpload}
+              onChange={({ target }) => {
+                setSelectedFile(target.files[0]);
+                setFileName(target.files[0].name);
+              }}
+              style={{ display: 'none' }}
+            />
+            {fileName && <div>Selected file: {fileName}</div>}
+          </div>
           <button type="submit" disabled={!selectedFile}>
             Submit
           </button>
