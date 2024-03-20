@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useSynthetix } from './useSynthetix';
-import { getApiUrl, saveToken } from './utils';
+import { getApiUrl, getIpfsUrl, saveToken } from './utils';
 
 const makeUnauthenticatedRequest = async (endpoint, data) => {
   const response = await fetch(`${getApiUrl()}${endpoint}`, {
@@ -10,15 +11,22 @@ const makeUnauthenticatedRequest = async (endpoint, data) => {
     },
     body: JSON.stringify(data),
   });
-  if (!response.ok) {
-    throw new Error('Network response was not ok');
+
+  if (response.ok) {
+    const contentType = response.headers.get('content-type');
+    if (contentType?.includes('application/json')) {
+      return response.json();
+    }
+    return response.text();
   }
-  return response.json();
+  throw new Error('Network response was not ok');
 };
 
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
   const { walletAddress, token, logout, connect, signer } = synthetix;
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [image, setImage] = useState('');
 
   const signupMutation = useMutation({
     mutationFn: (data) => makeUnauthenticatedRequest('signup', data),
@@ -35,6 +43,35 @@ export function App() {
       updateSynthetix({ token });
     },
   });
+
+  const kuboIpfsAddMutation = useMutation({
+    mutationFn: async (data) => {
+      const response = await fetch(`${getIpfsUrl()}api/v0/add`, {
+        method: 'POST',
+        body: data,
+      });
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.json();
+    },
+    onSuccess: ({ Hash }) => {
+      window.localStorage.setItem('cid', Hash);
+      kuboIpfsCatMutation.mutate(Hash);
+    },
+  });
+
+  const kuboIpfsCatMutation = useMutation({
+    mutationFn: (ipfsPath) => makeUnauthenticatedRequest(`api/v0/cat?arg=${ipfsPath}`),
+    onSuccess: setImage,
+  });
+
+  const handleFormSubmit = (event) => {
+    event.preventDefault();
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    kuboIpfsAddMutation.mutate(formData);
+  };
 
   return (
     <div className="navigation">
@@ -65,12 +102,31 @@ export function App() {
           ) : null}
         </div>
       </div>
+
+      {/* before realization on the backend */}
+      {token ? (
+        <form onSubmit={handleFormSubmit}>
+          <input
+            type="file"
+            accept=".png"
+            onChange={(event) => setSelectedFile(event.target.files[0])}
+          />
+          <button type="submit" disabled={!selectedFile}>
+            Submit
+          </button>
+        </form>
+      ) : null}
+      {image ? <img src={image} alt="User uploaded file" /> : null}
       {/* temporary solution for process tracking */}
       <h2>{`Account: ${walletAddress?.substring(0, 6)}`}</h2>
       {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
       {signupMutation.isPending || (verificationMutation.isPending && <div>Loading..</div>)}
       {signupMutation.isError && <div>Error: {signupMutation.error.message}</div>}
       {verificationMutation.isError && <div>Error: {verificationMutation.error.message}</div>}
+      {kuboIpfsAddMutation.isPending && <div>Uploading file...</div>}
+      {kuboIpfsAddMutation.isSuccess && <div>File uploaded successfully</div>}
+      {kuboIpfsAddMutation.isError && <div>Error uploading file: {addMutation.error.message}</div>}
+      <pre>{JSON.stringify(kuboIpfsAddMutation.data, null, 2)}</pre>
     </div>
   );
 }
