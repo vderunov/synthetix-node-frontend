@@ -138,7 +138,7 @@ export function App() {
       {verificationMutation.isError && <div>Error: {verificationMutation.error.message}</div>}
       {kuboIpfsAddMutation.isPending && <div>Uploading file...</div>}
       {kuboIpfsAddMutation.isSuccess && <div>File uploaded successfully</div>}
-      {kuboIpfsAddMutation.isError && <div>Error uploading file: {addMutation.error.message}</div>}
+      {kuboIpfsAddMutation.isError && <div>Error uploading file: {kuboIpfsAddMutation.error.message}</div>}
       <pre>{JSON.stringify(kuboIpfsAddMutation.data, null, 2)}</pre>
     </div>
   );
