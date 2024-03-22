@@ -96,8 +96,6 @@ module.exports = {
     htmlPlugin,
     new webpack.DefinePlugin({
       'process.env.API_URL': JSON.stringify(process.env.API_URL),
-      'process.env.IPFS_HOST': JSON.stringify(process.env.IPFS_HOST),
-      'process.env.IPFS_PORT': JSON.stringify(process.env.IPFS_PORT),
     }),
     new webpack.NormalModuleReplacementPlugin(
       /^debug$/,

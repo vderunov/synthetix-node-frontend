@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import { useSynthetix } from './useSynthetix';
-import { getApiUrl, getIpfsUrl, saveToken } from './utils';
+import { getApiUrl, saveToken } from './utils';
 
 const makeUnauthenticatedRequest = async (endpoint, data) => {
   const response = await fetch(`${getApiUrl()}${endpoint}`, {
@@ -48,8 +48,9 @@ export function App() {
 
   const kuboIpfsAddMutation = useMutation({
     mutationFn: async (data) => {
-      const response = await fetch(`${getIpfsUrl()}api/v0/add`, {
+      const response = await fetch(`${getApiUrl()}api/v0/add`, {
         method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
         body: data,
       });
       if (!response.ok) {
@@ -64,8 +65,18 @@ export function App() {
   });
 
   const kuboIpfsCatMutation = useMutation({
-    mutationFn: (ipfsPath) => makeUnauthenticatedRequest(`api/v0/cat?arg=${ipfsPath}`),
-    onSuccess: setImage,
+    mutationFn: async (ipfsPath) => {
+      const response = await fetch(`${getApiUrl()}api/v0/cat?arg=${ipfsPath}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      return response.blob();
+    },
+    onSuccess: (data) => setImage(URL.createObjectURL(data)),
   });
 
   const handleFormSubmit = (event) => {
@@ -105,31 +116,29 @@ export function App() {
         </div>
       </div>
 
-      {/* before realization on the backend */}
-      {token ? (
-        <form onSubmit={handleFormSubmit}>
-          <div>
-            <button type="button" onClick={() => fileUpload.current.click()}>
-              Select File
-            </button>
-            <input
-              type="file"
-              accept=".png"
-              ref={fileUpload}
-              onChange={({ target }) => {
-                setSelectedFile(target.files[0]);
-                setFileName(target.files[0].name);
-              }}
-              style={{ display: 'none' }}
-            />
-            {fileName && <div>Selected file: {fileName}</div>}
-          </div>
-          <button type="submit" disabled={!selectedFile}>
-            Submit
+      <form onSubmit={handleFormSubmit}>
+        <div>
+          <button type="button" onClick={() => fileUpload.current.click()}>
+            Select File
           </button>
-        </form>
-      ) : null}
+          <input
+            type="file"
+            accept=".png"
+            ref={fileUpload}
+            onChange={({ target }) => {
+              setSelectedFile(target.files[0]);
+              setFileName(target.files[0].name);
+            }}
+            style={{ display: 'none' }}
+          />
+          {fileName && <div>Selected file: {fileName}</div>}
+        </div>
+        <button type="submit" disabled={!selectedFile}>
+          Submit
+        </button>
+      </form>
       {image ? <img src={image} alt="User uploaded file" /> : null}
+
       {/* temporary solution for process tracking */}
       <h2>{`Account: ${walletAddress?.substring(0, 6)}`}</h2>
       {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
