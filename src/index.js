@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ethers } from 'ethers';
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { SynthetixProvider, useSynthetix } from './useSynthetix';
@@ -9,10 +9,15 @@ import { restoreToken } from './utils';
 
 import './main.css';
 
+export const OP_SEPOLIA_CHAIN_ID = '0xaa37dc';
+
 const queryClient = new QueryClient();
 
 function WalletWatcher({ children }) {
   const [, updateSynthetix] = useSynthetix();
+  const handleChainChanged = useCallback(() => {
+    window.location.reload();
+  }, []);
 
   useEffect(() => {
     if (!window.ethereum) {
@@ -24,21 +29,25 @@ function WalletWatcher({ children }) {
       const signer = provider ? await provider.getSigner() : undefined;
       const walletAddress = accounts[0] ? accounts[0].toLowerCase() : undefined;
       const token = restoreToken({ walletAddress });
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
 
       updateSynthetix({
         walletAddress,
         token,
         provider,
         signer,
+        chainId,
       });
     }
 
     window.ethereum.on('accountsChanged', onAccountsChanged);
+    window.ethereum.on('chainChanged', handleChainChanged);
 
     return () => {
       window.ethereum.removeListener('accountsChanged', onAccountsChanged);
+      window.ethereum.removeListener('chainChanged', handleChainChanged);
     };
-  }, [updateSynthetix]);
+  }, [updateSynthetix, handleChainChanged]);
 
   return children;
 }
@@ -65,8 +74,9 @@ async function run() {
       const signer = provider ? await provider.getSigner() : undefined;
       const walletAddress = signer.address.toLowerCase();
       const token = restoreToken({ walletAddress });
+      const chainId = await window.ethereum?.request({ method: 'eth_chainId' });
       window.localStorage.setItem('connected', 'true');
-      return { provider, signer, walletAddress, token };
+      return { provider, signer, walletAddress, token, chainId };
     } catch {
       return {};
     }
@@ -76,6 +86,10 @@ async function run() {
     window.localStorage.clear();
     window.location.reload();
   };
+
+  const chainId = await window.ethereum?.request({
+    method: 'eth_chainId',
+  });
 
   const root = ReactDOM.createRoot(document.querySelector('#app'));
   root.render(
@@ -88,6 +102,7 @@ async function run() {
           provider,
           signer,
           token: restoreToken({ walletAddress }),
+          chainId,
         }}
       >
         <WalletWatcher>

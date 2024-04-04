@@ -17,6 +17,7 @@ export const SYNTHETIX_INITIAL_STATE = Object.freeze({
   token: undefined,
   provider: undefined,
   signer: undefined,
+  chainId: undefined,
 });
 
 export const SYNTHETIX_STATE_KEYS = Object.keys(SYNTHETIX_INITIAL_STATE);
