@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { OP_SEPOLIA_CHAIN_ID } from './index';
 import { useSynthetix } from './useSynthetix';
 
 const Banner = () => {
@@ -7,7 +6,7 @@ const Banner = () => {
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    setShowBanner(OP_SEPOLIA_CHAIN_ID !== synthetix.chainId);
+    setShowBanner('0xaa37dc' !== synthetix.chainId);
   }, [synthetix.chainId]);
 
   if (!showBanner) {

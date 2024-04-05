@@ -9,15 +9,10 @@ import { restoreToken } from './utils';
 
 import './main.css';
 
-export const OP_SEPOLIA_CHAIN_ID = '0xaa37dc';
-
 const queryClient = new QueryClient();
 
 function WalletWatcher({ children }) {
   const [, updateSynthetix] = useSynthetix();
-  const handleChainChanged = useCallback(() => {
-    window.location.reload();
-  }, []);
 
   useEffect(() => {
     if (!window.ethereum) {
@@ -41,13 +36,11 @@ function WalletWatcher({ children }) {
     }
 
     window.ethereum.on('accountsChanged', onAccountsChanged);
-    window.ethereum.on('chainChanged', handleChainChanged);
 
     return () => {
       window.ethereum.removeListener('accountsChanged', onAccountsChanged);
-      window.ethereum.removeListener('chainChanged', handleChainChanged);
     };
-  }, [updateSynthetix, handleChainChanged]);
+  }, [updateSynthetix]);
 
   return children;
 }
