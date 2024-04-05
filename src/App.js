@@ -90,7 +90,7 @@ export function App() {
   const handleSwitchChain = async () => {
     await window.ethereum?.request({
       method: 'wallet_switchEthereumChain',
-      params: [{ chainId: '0xaa37dc' }],
+      params: [{ chainId: `0x${Number(11155420).toString(16)}` }],
     });
   };
 
@@ -107,7 +107,7 @@ export function App() {
               </button>
             ) : null}
 
-            {'0xaa37dc' === chainId ? null : (
+            {`0x${Number(11155420).toString(16)}` === chainId ? null : (
               <button type="button" onClick={handleSwitchChain}>
                 Change chain to OP Sepolia
               </button>
@@ -157,7 +157,9 @@ export function App() {
 
         {/* temporary solution for process tracking */}
         <h2>{`Account: ${walletAddress?.substring(0, 6)}`}</h2>
-        <h2>{`Chain ID: ${chainId}(${chainId === '0xaa37dc' ? 'OP Sepolia' : 'other'})`}</h2>
+        <h2>{`Chain ID: ${chainId}(${
+          chainId === `0x${Number(11155420).toString(16)}` ? 'OP Sepolia' : 'other'
+        })`}</h2>
         {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
         {signupMutation.isPending || (verificationMutation.isPending && <div>Loading..</div>)}
         {signupMutation.isError && <div>Error: {signupMutation.error.message}</div>}

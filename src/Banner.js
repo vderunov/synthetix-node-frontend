@@ -6,7 +6,7 @@ const Banner = () => {
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    setShowBanner('0xaa37dc' !== synthetix.chainId);
+    setShowBanner(`0x${Number(11155420).toString(16)}` !== synthetix.chainId);
   }, [synthetix.chainId]);
 
   if (!showBanner) {
