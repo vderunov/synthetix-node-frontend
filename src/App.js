@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
+import Banner from './Banner';
 import { useSynthetix } from './useSynthetix';
 import { getApiUrl, saveToken } from './utils';
 
@@ -24,7 +25,7 @@ const makeUnauthenticatedRequest = async (endpoint, data) => {
 
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
-  const { walletAddress, token, logout, connect, signer } = synthetix;
+  const { walletAddress, token, logout, connect, signer, chainId } = synthetix;
   const fileUpload = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState('');
@@ -86,71 +87,90 @@ export function App() {
     kuboIpfsAddMutation.mutate(formData);
   };
 
+  const handleSwitchChain = async () => {
+    await window.ethereum?.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{ chainId: `0x${Number(11155420).toString(16)}` }],
+    });
+  };
+
   return (
-    <div className="navigation">
-      <div className="flexContainer">
-        <h2>Synthetix node Frontend</h2>
-        <div className="rightNav">
-          {walletAddress && token ? (
-            <button type="button" onClick={logout}>
-              Logout
-            </button>
-          ) : null}
-
-          {walletAddress && !token ? (
-            <>
-              <button type="button" onClick={() => signupMutation.mutate({ walletAddress })}>
-                Login
-              </button>
+    <div>
+      <Banner />
+      <div className="navigation">
+        <div className="flexContainer">
+          <h2>Synthetix node Frontend</h2>
+          <div className="rightNav">
+            {walletAddress && token ? (
               <button type="button" onClick={logout}>
-                Disconnect
+                Logout
               </button>
-            </>
-          ) : null}
+            ) : null}
 
-          {!walletAddress && !token ? (
-            <button type="button" onClick={async () => updateSynthetix(await connect())}>
-              Connect
+            {`0x${Number(11155420).toString(16)}` === chainId ? null : (
+              <button type="button" onClick={handleSwitchChain}>
+                Change chain to OP Sepolia
+              </button>
+            )}
+
+            {walletAddress && !token ? (
+              <>
+                <button type="button" onClick={() => signupMutation.mutate({ walletAddress })}>
+                  Login
+                </button>
+                <button type="button" onClick={logout}>
+                  Disconnect
+                </button>
+              </>
+            ) : null}
+
+            {!walletAddress && !token ? (
+              <button type="button" onClick={async () => updateSynthetix(await connect())}>
+                Connect
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        <form onSubmit={handleFormSubmit}>
+          <div>
+            <button type="button" onClick={() => fileUpload.current.click()}>
+              Select File
             </button>
-          ) : null}
-        </div>
-      </div>
-
-      <form onSubmit={handleFormSubmit}>
-        <div>
-          <button type="button" onClick={() => fileUpload.current.click()}>
-            Select File
+            <input
+              type="file"
+              accept=".png"
+              ref={fileUpload}
+              onChange={({ target }) => {
+                setSelectedFile(target.files[0]);
+                setFileName(target.files[0].name);
+              }}
+              style={{ display: 'none' }}
+            />
+            {fileName && <div>Selected file: {fileName}</div>}
+          </div>
+          <button type="submit" disabled={!selectedFile}>
+            Submit
           </button>
-          <input
-            type="file"
-            accept=".png"
-            ref={fileUpload}
-            onChange={({ target }) => {
-              setSelectedFile(target.files[0]);
-              setFileName(target.files[0].name);
-            }}
-            style={{ display: 'none' }}
-          />
-          {fileName && <div>Selected file: {fileName}</div>}
-        </div>
-        <button type="submit" disabled={!selectedFile}>
-          Submit
-        </button>
-      </form>
-      {image ? <img src={image} alt="User uploaded file" /> : null}
+        </form>
+        {image ? <img src={image} alt="User uploaded file" /> : null}
 
-      {/* temporary solution for process tracking */}
-      <h2>{`Account: ${walletAddress?.substring(0, 6)}`}</h2>
-      {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
-      {signupMutation.isPending || (verificationMutation.isPending && <div>Loading..</div>)}
-      {signupMutation.isError && <div>Error: {signupMutation.error.message}</div>}
-      {verificationMutation.isError && <div>Error: {verificationMutation.error.message}</div>}
-      {kuboIpfsAddMutation.isPending && <div>Uploading file...</div>}
-      {kuboIpfsAddMutation.isSuccess && <div>File uploaded successfully</div>}
-      {kuboIpfsAddMutation.isError && (
-        <div>Error uploading file: {kuboIpfsAddMutation.error.message}</div>
-      )}
-      <pre>{JSON.stringify(kuboIpfsAddMutation.data, null, 2)}</pre>
+        {/* temporary solution for process tracking */}
+        <h2>{`Account: ${walletAddress?.substring(0, 6)}`}</h2>
+        <h2>{`Chain ID: ${chainId}(${
+          chainId === `0x${Number(11155420).toString(16)}` ? 'OP Sepolia' : 'other'
+        })`}</h2>
+        {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
+        {signupMutation.isPending || (verificationMutation.isPending && <div>Loading..</div>)}
+        {signupMutation.isError && <div>Error: {signupMutation.error.message}</div>}
+        {verificationMutation.isError && <div>Error: {verificationMutation.error.message}</div>}
+        {kuboIpfsAddMutation.isPending && <div>Uploading file...</div>}
+        {kuboIpfsAddMutation.isSuccess && <div>File uploaded successfully</div>}
+        {kuboIpfsAddMutation.isError && (
+          <div>Error uploading file: {kuboIpfsAddMutation.error.message}</div>
+        )}
+        <pre>{JSON.stringify(kuboIpfsAddMutation.data, null, 2)}</pre>
+      </div>
     </div>
   );
 }
