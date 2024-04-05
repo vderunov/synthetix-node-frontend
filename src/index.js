@@ -13,10 +13,6 @@ const queryClient = new QueryClient();
 
 function WalletWatcher({ children }) {
   const [, updateSynthetix] = useSynthetix();
-  const handleChainChanged = useCallback(
-    (chainId) => updateSynthetix({ chainId }),
-    [updateSynthetix]
-  );
 
   useEffect(() => {
     if (!window.ethereum) {
@@ -39,6 +35,8 @@ function WalletWatcher({ children }) {
       });
     }
 
+    const handleChainChanged = (chainId) => updateSynthetix({ chainId });
+
     window.ethereum.on('accountsChanged', onAccountsChanged);
     window.ethereum.on('chainChanged', handleChainChanged);
 
@@ -46,7 +44,7 @@ function WalletWatcher({ children }) {
       window.ethereum.removeListener('accountsChanged', onAccountsChanged);
       window.ethereum.removeListener('chainChanged', handleChainChanged);
     };
-  }, [updateSynthetix, handleChainChanged]);
+  }, [updateSynthetix]);
 
   return children;
 }
