@@ -1,7 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { ethers } from 'ethers';
-import React, { useCallback, useEffect } from 'react';
+import { abi, address } from '@vderunov/whitelist-contract/deployments/11155420/Whitelist';
+import { Contract, ethers } from 'ethers';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { SynthetixProvider, useSynthetix } from './useSynthetix';
@@ -25,6 +26,7 @@ function WalletWatcher({ children }) {
       const walletAddress = accounts[0] ? accounts[0].toLowerCase() : undefined;
       const token = restoreToken({ walletAddress });
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      const contract = new Contract(address, abi, signer);
 
       updateSynthetix({
         walletAddress,
@@ -32,6 +34,7 @@ function WalletWatcher({ children }) {
         provider,
         signer,
         chainId,
+        contract,
       });
     }
 
@@ -53,6 +56,7 @@ async function run() {
   let provider;
   let signer;
   let walletAddress;
+  let contract;
 
   try {
     if (window.localStorage.getItem('connected') === 'true') {
@@ -60,6 +64,7 @@ async function run() {
       const accounts = provider ? await provider.listAccounts() : [];
       walletAddress = accounts[0] ? accounts[0].address.toLowerCase() : undefined;
       signer = provider && walletAddress ? await provider.getSigner() : undefined;
+      contract = new Contract(address, abi, signer);
     }
   } catch (err) {
     console.error('Failed to set connection:', err);
@@ -72,8 +77,9 @@ async function run() {
       const walletAddress = signer.address.toLowerCase();
       const token = restoreToken({ walletAddress });
       const chainId = await window.ethereum?.request({ method: 'eth_chainId' });
+      const contract = new Contract(address, abi, signer);
       window.localStorage.setItem('connected', 'true');
-      return { provider, signer, walletAddress, token, chainId };
+      return { provider, signer, walletAddress, token, chainId, contract };
     } catch {
       return {};
     }
@@ -100,6 +106,7 @@ async function run() {
           signer,
           token: restoreToken({ walletAddress }),
           chainId,
+          contract,
         }}
       >
         <WalletWatcher>
