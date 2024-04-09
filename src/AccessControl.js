@@ -1,43 +1,21 @@
-import { ethers } from 'ethers';
-import { useCallback, useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { abi, address } from '@vderunov/whitelist-contract/deployments/11155420/Whitelist';
+import { Contract, ethers } from 'ethers';
+import { useState } from 'react';
+import usePermissions from './usePermissions';
 import { useSynthetix } from './useSynthetix';
 
 function AccessControl() {
-  const [synthetix, updateSynthetix] = useSynthetix();
-  const { contract, permissions, walletAddress } = synthetix;
+  const queryClient = useQueryClient();
+  const [synthetix] = useSynthetix();
+  const permissions = usePermissions();
   const [userApproveWallet, setUserApproveWallet] = useState('');
   const [userApproveWalletError, setUserApproveWalletError] = useState('');
   const [userRevokeWallet, setUserRevokeWallet] = useState('');
   const [userRevokeWalletError, setUserRevokeWalletError] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [loadingText, setLoadingText] = useState('');
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: <explanation>
-  const fetchPermissions = useCallback(async () => {
-    if (!contract || !walletAddress) {
-      setIsLoading(false);
-      return;
-    }
-
-    const [isPending, isGranted, isAdmin] = await Promise.all([
-      contract.isPending(walletAddress),
-      contract.isGranted(walletAddress),
-      contract.isAdmin(walletAddress),
-    ]);
-
-    updateSynthetix({
-      permissions: {
-        isPending,
-        isGranted,
-        isAdmin,
-      },
-    });
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchPermissions();
-  }, [fetchPermissions]);
+  const contract = new Contract(address, abi, synthetix.signer);
 
   const executeContractMethod = async (method, errorHandlerMsg) => {
     setIsLoading(true);
@@ -46,7 +24,9 @@ function AccessControl() {
       const tx = await method();
       await tx.wait();
       setLoadingText('Updating permissions status...');
-      await fetchPermissions();
+      await queryClient.invalidateQueries({
+        queryKey: [synthetix.chainId, synthetix.walletAddress, 'permissions'],
+      });
     } catch (error) {
       console.error(`${errorHandlerMsg} `, error);
     } finally {
@@ -97,7 +77,7 @@ function AccessControl() {
 
   let content;
   switch (true) {
-    case isLoading:
+    case isLoading || permissions.isFetching:
       content = (
         <>
           {loadingText && <p>{loadingText}</p>}
@@ -105,7 +85,7 @@ function AccessControl() {
         </>
       );
       break;
-    case permissions?.isPending:
+    case permissions.data.isPending:
       content = (
         <>
           <h3>Please wait for approval</h3>
@@ -131,7 +111,7 @@ function AccessControl() {
       <div className="container">
         <div className="inner-block">{content}</div>
         <div className="inner-block">
-          {permissions?.isAdmin && !isLoading ? (
+          {permissions.data.isAdmin && !permissions.isFetching && !isLoading ? (
             <>
               <h3>Approve application (only Admin)</h3>
               <form onSubmit={handleApproveApplicationSubmit} className="admin-form">

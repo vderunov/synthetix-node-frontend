@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import AccessControl from './AccessControl';
 import Banner from './Banner';
+import usePermissions from './usePermissions';
 import { useSynthetix } from './useSynthetix';
 import { getApiUrl, saveToken } from './utils';
 
@@ -26,8 +27,8 @@ const makeUnauthenticatedRequest = async (endpoint, data) => {
 
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
-  const { walletAddress, token, logout, connect, signer, chainId, contract, permissions } =
-    synthetix;
+  const { walletAddress, token, logout, connect, signer, chainId } = synthetix;
+  const permissions = usePermissions();
   const fileUpload = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState('');
@@ -136,7 +137,7 @@ export function App() {
       </div>
       <div className="container">
         <div className="block">
-          {permissions?.isGranted && token ? (
+          {permissions.data.isGranted && token ? (
             <form onSubmit={handleFileUploadSubmit}>
               <div>
                 <button type="button" onClick={() => fileUpload.current.click()}>
@@ -162,7 +163,7 @@ export function App() {
             <h3>Please login and request access permissions to use</h3>
           )}
         </div>
-        {contract && walletAddress && token ? <AccessControl /> : null}
+        {walletAddress && token ? <AccessControl /> : null}
       </div>
       {image ? <img src={image} alt="User uploaded file" /> : null}
       {/* temporary solution for process tracking */}
