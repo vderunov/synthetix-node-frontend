@@ -5,11 +5,11 @@ import { useSynthetix } from './useSynthetix';
 
 function usePermissions() {
   const [synthetix] = useSynthetix();
-  const contract = new Contract(address, abi, synthetix.provider);
 
   return useQuery({
     queryKey: [synthetix.chainId, synthetix.walletAddress, 'permissions'],
     queryFn: async () => {
+      const contract = new Contract(address, abi, synthetix.provider);
       const [isPending, isGranted, isAdmin] = await Promise.all([
         contract.isPending(synthetix.walletAddress),
         contract.isGranted(synthetix.walletAddress),

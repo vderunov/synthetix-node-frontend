@@ -1,48 +1,35 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { abi, address } from '@vderunov/whitelist-contract/deployments/11155420/Whitelist';
-import { Contract, ethers } from 'ethers';
+import { ethers } from 'ethers';
 import { useState } from 'react';
+import useApplyForWhitelistMutation from './useApplyForWhitelistMutation';
+import useApproveApplicationMutation from './useApproveApplicationMutation';
 import usePermissions from './usePermissions';
-import { useSynthetix } from './useSynthetix';
+import useRenounceAssignedRoleMutation from './useRenounceAssignedRoleMutation';
+import useRevokeAccessMutation from './useRevokeAccessMutation';
 
 function AccessControl() {
-  const queryClient = useQueryClient();
-  const [synthetix] = useSynthetix();
-  const permissions = usePermissions();
   const [userApproveWallet, setUserApproveWallet] = useState('');
   const [userApproveWalletError, setUserApproveWalletError] = useState('');
   const [userRevokeWallet, setUserRevokeWallet] = useState('');
   const [userRevokeWalletError, setUserRevokeWalletError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [loadingText, setLoadingText] = useState('');
-  const contract = new Contract(address, abi, synthetix.signer);
 
-  const executeContractMethod = async (method, errorHandlerMsg) => {
-    setIsLoading(true);
-    setLoadingText('Sending a request for permissions...');
-    try {
-      const tx = await method();
-      await tx.wait();
-      setLoadingText('Updating permissions status...');
-      await queryClient.invalidateQueries({
-        queryKey: [synthetix.chainId, synthetix.walletAddress, 'permissions'],
-      });
-    } catch (error) {
-      console.error(`${errorHandlerMsg} `, error);
-    } finally {
-      setLoadingText('');
-      setIsLoading(false);
-    }
-  };
+  const permissions = usePermissions();
+  const approveApplicationMutation = useApproveApplicationMutation();
+  const revokeAccessMutation = useRevokeAccessMutation();
+  const applyForWhitelistMutation = useApplyForWhitelistMutation();
+  const renounceAssignedRoleMutation = useRenounceAssignedRoleMutation();
+
+  const isLoading =
+    permissions.isFetching ||
+    approveApplicationMutation.isPending ||
+    revokeAccessMutation.isPending ||
+    applyForWhitelistMutation.isPending ||
+    renounceAssignedRoleMutation.isPending;
 
   const handleApproveApplicationSubmit = async (e) => {
     e.preventDefault();
 
     if (ethers.isAddress(userApproveWallet)) {
-      executeContractMethod(
-        () => contract.approveApplication(userApproveWallet),
-        'An error occurred when handling the submit:'
-      );
+      approveApplicationMutation.mutate(userApproveWallet);
     } else {
       setUserApproveWalletError('Invalid wallet address');
     }
@@ -51,45 +38,27 @@ function AccessControl() {
   const handleRevokeAccessSubmit = async (e) => {
     e.preventDefault();
 
-    if (ethers.isAddress(userApproveWallet)) {
-      executeContractMethod(
-        () => contract.revokeAccess(userRevokeWallet),
-        'An error occurred when handling the submit:'
-      );
+    if (ethers.isAddress(userRevokeWallet)) {
+      revokeAccessMutation.mutate(userRevokeWallet);
     } else {
       setUserRevokeWalletError('Invalid wallet address');
     }
   };
 
-  const handleApplyForWhitelist = () => {
-    executeContractMethod(
-      contract.applyForWhitelist,
-      'An error occurred when applying for whitelist:'
-    );
-  };
-
-  const handleRenounceAssignedRole = () => {
-    executeContractMethod(
-      contract.renounceAssignedRole,
-      'An error occurred when renouncing assigned role:'
-    );
-  };
-
   let content;
   switch (true) {
-    case isLoading || permissions.isFetching:
-      content = (
-        <>
-          {loadingText && <p>{loadingText}</p>}
-          <span className="loader" />
-        </>
-      );
+    case isLoading:
+      content = <span className="loader" />;
       break;
     case permissions.data.isPending:
       content = (
         <>
           <h3>Please wait for approval</h3>
-          <button type="button" className="danger" onClick={handleRenounceAssignedRole}>
+          <button
+            type="button"
+            className="danger"
+            onClick={() => renounceAssignedRoleMutation.mutate()}
+          >
             Renounce assigned role
           </button>
         </>
@@ -99,7 +68,7 @@ function AccessControl() {
       content = (
         <>
           <h3>Access control</h3>
-          <button type="button" onClick={handleApplyForWhitelist}>
+          <button type="button" onClick={() => applyForWhitelistMutation.mutate()}>
             Apply for whitelist
           </button>
         </>
@@ -111,7 +80,7 @@ function AccessControl() {
       <div className="container">
         <div className="inner-block">{content}</div>
         <div className="inner-block">
-          {permissions.data.isAdmin && !permissions.isFetching && !isLoading ? (
+          {permissions.data.isAdmin && !isLoading ? (
             <>
               <h3>Approve application (only Admin)</h3>
               <form onSubmit={handleApproveApplicationSubmit} className="admin-form">

@@ -8,7 +8,7 @@ export function restoreToken({ walletAddress }) {
       ? JSON.parse(window.localStorage.getItem('tokens'))
       : {};
     return tokens[walletAddress];
-  } catch (e) {
+  } catch {
     return undefined;
   }
 }
