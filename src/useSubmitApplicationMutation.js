@@ -3,14 +3,14 @@ import { abi, address } from '@vderunov/whitelist-contract/deployments/11155420/
 import { Contract } from 'ethers';
 import { useSynthetix } from './useSynthetix';
 
-function useRenounceAssignedRoleMutation() {
+function useSubmitApplicationMutation() {
   const [synthetix] = useSynthetix();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
       const contract = new Contract(address, abi, synthetix.signer);
-      const tx = await contract.renounceAssignedRole();
+      const tx = await contract.submitApplication();
       await tx.wait();
     },
     onSuccess: () => {
@@ -22,4 +22,4 @@ function useRenounceAssignedRoleMutation() {
   });
 }
 
-export default useRenounceAssignedRoleMutation;
+export default useSubmitApplicationMutation;

@@ -3,14 +3,14 @@ import { abi, address } from '@vderunov/whitelist-contract/deployments/11155420/
 import { Contract } from 'ethers';
 import { useSynthetix } from './useSynthetix';
 
-function useApplyForWhitelistMutation() {
+function useWithdrawApplicationMutation() {
   const [synthetix] = useSynthetix();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
       const contract = new Contract(address, abi, synthetix.signer);
-      const tx = await contract.applyForWhitelist();
+      const tx = await contract.withdrawApplication();
       await tx.wait();
     },
     onSuccess: () => {
@@ -22,4 +22,4 @@ function useApplyForWhitelistMutation() {
   });
 }
 
-export default useApplyForWhitelistMutation;
+export default useWithdrawApplicationMutation;

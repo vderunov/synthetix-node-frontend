@@ -3,14 +3,14 @@ import { abi, address } from '@vderunov/whitelist-contract/deployments/11155420/
 import { Contract } from 'ethers';
 import { useSynthetix } from './useSynthetix';
 
-function useRevokeAccessMutation() {
+function useRejectApplicationMutation() {
   const [synthetix] = useSynthetix();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (wallet) => {
       const contract = new Contract(address, abi, synthetix.signer);
-      const tx = await contract.revokeAccess(wallet);
+      const tx = await contract.rejectApplication(wallet);
       await tx.wait();
 
       queryClient.invalidateQueries({
@@ -21,4 +21,4 @@ function useRevokeAccessMutation() {
   });
 }
 
-export default useRevokeAccessMutation;
+export default useRejectApplicationMutation;
