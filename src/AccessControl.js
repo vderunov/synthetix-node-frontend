@@ -8,9 +8,9 @@ import useRevokeAccessMutation from './useRevokeAccessMutation';
 
 function AccessControl() {
   const [userApproveWallet, setUserApproveWallet] = useState('');
-  const [userApproveWalletError, setUserApproveWalletError] = useState('');
+  const [userApproveWalletError, setUserApproveWalletError] = useState(false);
   const [userRevokeWallet, setUserRevokeWallet] = useState('');
-  const [userRevokeWalletError, setUserRevokeWalletError] = useState('');
+  const [userRevokeWalletError, setUserRevokeWalletError] = useState(false);
 
   const permissions = usePermissions();
   const approveApplicationMutation = useApproveApplicationMutation();
@@ -31,7 +31,7 @@ function AccessControl() {
     if (ethers.isAddress(userApproveWallet)) {
       approveApplicationMutation.mutate(userApproveWallet);
     } else {
-      setUserApproveWalletError('Invalid wallet address');
+      setUserApproveWalletError(true);
     }
   };
 
@@ -41,22 +41,22 @@ function AccessControl() {
     if (ethers.isAddress(userRevokeWallet)) {
       revokeAccessMutation.mutate(userRevokeWallet);
     } else {
-      setUserRevokeWalletError('Invalid wallet address');
+      setUserRevokeWalletError(true);
     }
   };
 
   let content;
   switch (true) {
     case isLoading:
-      content = <span className="loader" />;
+      content = <progress className="s12 m12 s12" />;
       break;
     case permissions.data.isPending:
       content = (
         <>
-          <h3>Please wait for approval</h3>
+          <h5 className="s12 m12 s12 center-align">Please wait for approval</h5>
           <button
             type="button"
-            className="danger"
+            className="transparent s12 m12 s12"
             onClick={() => renounceAssignedRoleMutation.mutate()}
           >
             Renounce assigned role
@@ -67,8 +67,12 @@ function AccessControl() {
     default:
       content = (
         <>
-          <h3>Access control</h3>
-          <button type="button" onClick={() => applyForWhitelistMutation.mutate()}>
+          <h5 className="s12 m12 s12 center-align">Access control</h5>
+          <button
+            type="button"
+            className="transparent s12 m12 s12"
+            onClick={() => applyForWhitelistMutation.mutate()}
+          >
             Apply for whitelist
           </button>
         </>
@@ -76,60 +80,61 @@ function AccessControl() {
   }
 
   return (
-    <div className="block">
-      <div className="container">
-        <div className="inner-block">{content}</div>
-        <div className="inner-block">
-          {permissions.data.isAdmin && !isLoading ? (
-            <>
-              <h3>Approve application (only Admin)</h3>
-              <form onSubmit={handleApproveApplicationSubmit} className="admin-form">
-                <input
-                  type="text"
-                  value={userApproveWallet}
-                  onChange={(e) => {
-                    setUserApproveWalletError('');
-                    setUserApproveWallet(e.target.value);
-                  }}
-                  placeholder="Enter wallet address"
-                />
-                {userApproveWalletError && (
-                  <p className="invalid-address">{userApproveWalletError}</p>
-                )}
-                <button type="submit" disabled={!userApproveWallet || userApproveWalletError}>
-                  Submit
-                </button>
-              </form>
-
-              <hr />
-
-              <h3>Revoke access (only Admin)</h3>
-              <form onSubmit={handleRevokeAccessSubmit} className="admin-form">
-                <input
-                  type="text"
-                  value={userRevokeWallet}
-                  onChange={(e) => {
-                    setUserRevokeWalletError('');
-                    setUserRevokeWallet(e.target.value);
-                  }}
-                  placeholder="Enter wallet address"
-                />
-                {userRevokeWalletError && (
-                  <p className="invalid-address">{userRevokeWalletError}</p>
-                )}
-                <button
-                  type="submit"
-                  className="danger"
-                  disabled={!userRevokeWallet || userRevokeWalletError}
-                >
-                  Revoke access
-                </button>
-              </form>
-            </>
-          ) : null}
-        </div>
+    <>
+      <div className="s12 m6 l4 medium-padding fill bottom-shadow medium-height">
+        <div className="grid">{content}</div>
       </div>
-    </div>
+      {permissions.data.isAdmin && !isLoading ? (
+        <div className="s12 m6 l4 medium-padding fill bottom-shadow medium-height">
+          <h5 className="center-align">Only for Admin</h5>
+          <form className="medium-padding" onSubmit={handleApproveApplicationSubmit}>
+            <div className={`field label border ${userApproveWalletError && 'invalid'}`}>
+              <input
+                type="text"
+                value={userApproveWallet}
+                onChange={(e) => {
+                  setUserApproveWalletError(false);
+                  setUserApproveWallet(e.target.value);
+                }}
+              />
+              <label>Enter wallet address</label>
+              <span className={userApproveWalletError ? 'error' : 'helper'}>
+                Approve application
+              </span>
+            </div>
+            <button
+              type="submit"
+              className="transparent"
+              disabled={!userApproveWallet || userApproveWalletError}
+            >
+              Submit
+            </button>
+          </form>
+
+          <form className="medium-padding" onSubmit={handleRevokeAccessSubmit}>
+            <div className={`field label border ${userRevokeWalletError && 'invalid'}`}>
+              <input
+                type="text"
+                value={userRevokeWallet}
+                onChange={(e) => {
+                  setUserRevokeWalletError(false);
+                  setUserRevokeWallet(e.target.value);
+                }}
+              />
+              <label>Enter wallet address</label>
+              <span className={userRevokeWalletError ? 'error' : 'helper'}>Revoke access</span>
+            </div>
+            <button
+              type="submit"
+              className="transparent"
+              disabled={!userRevokeWallet || userRevokeWalletError}
+            >
+              Submit
+            </button>
+          </form>
+        </div>
+      ) : null}
+    </>
   );
 }
 

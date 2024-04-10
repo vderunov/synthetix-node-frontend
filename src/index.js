@@ -7,7 +7,7 @@ import { App } from './App';
 import { SynthetixProvider, useSynthetix } from './useSynthetix';
 import { restoreToken } from './utils';
 
-import './main.css';
+import 'beercss';
 
 const queryClient = new QueryClient();
 

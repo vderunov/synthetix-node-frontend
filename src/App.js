@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
 import AccessControl from './AccessControl';
-import Banner from './Banner';
+import NetworkMismatchSnackbar from './NetworkMismatchSnackbar';
 import usePermissions from './usePermissions';
 import { useSynthetix } from './useSynthetix';
 import { getApiUrl, saveToken } from './utils';
@@ -98,49 +98,99 @@ export function App() {
   };
 
   return (
-    <div>
-      <Banner />
-      <div className="navigation">
-        <div className="flexContainer">
-          <h2>Synthetix node Frontend</h2>
-          <div className="rightNav">
-            {walletAddress && token ? (
-              <button type="button" onClick={logout}>
-                Logout
-              </button>
-            ) : null}
+    <>
+      <header>
+        <nav className="m l">
+          <h5>Synthetix node Frontend</h5>
+          <div className="max" />
+          {walletAddress && token ? (
+            <button type="button" className="transparent" onClick={logout}>
+              Logout
+            </button>
+          ) : null}
 
-            {`0x${Number(11155420).toString(16)}` === chainId ? null : (
-              <button type="button" onClick={handleSwitchChain}>
-                Change chain to OP Sepolia
-              </button>
-            )}
+          {`0x${Number(11155420).toString(16)}` === chainId ? null : (
+            <button type="button" className="transparent" onClick={handleSwitchChain}>
+              Change chain to OP Sepolia
+            </button>
+          )}
 
-            {walletAddress && !token ? (
-              <>
-                <button type="button" onClick={() => signupMutation.mutate({ walletAddress })}>
-                  Login
-                </button>
-                <button type="button" onClick={logout}>
-                  Disconnect
-                </button>
-              </>
-            ) : null}
-
-            {!walletAddress && !token ? (
-              <button type="button" onClick={async () => updateSynthetix(await connect())}>
-                Connect
+          {walletAddress && !token ? (
+            <>
+              <button
+                type="button"
+                className="transparent"
+                onClick={() => signupMutation.mutate({ walletAddress })}
+              >
+                Login
               </button>
-            ) : null}
-          </div>
-        </div>
-      </div>
-      <div className="container">
-        <div className="block">
-          {permissions.data.isGranted && token ? (
-            <form onSubmit={handleFileUploadSubmit}>
-              <div>
-                <button type="button" onClick={() => fileUpload.current.click()}>
+              <button type="button" className="transparent" onClick={logout}>
+                Disconnect
+              </button>
+            </>
+          ) : null}
+
+          {!walletAddress && !token ? (
+            <button
+              type="button"
+              className="transparent"
+              onClick={async () => updateSynthetix(await connect())}
+            >
+              Connect
+            </button>
+          ) : null}
+        </nav>
+
+        <nav className="s">
+          {walletAddress && token ? (
+            <button type="button" className="transparent" onClick={logout}>
+              Logout
+            </button>
+          ) : null}
+
+          {`0x${Number(11155420).toString(16)}` === chainId ? null : (
+            <button type="button" className="transparent" onClick={handleSwitchChain}>
+              Change chain to OP Sepolia
+            </button>
+          )}
+
+          {walletAddress && !token ? (
+            <>
+              <button
+                type="button"
+                className="transparent"
+                onClick={() => signupMutation.mutate({ walletAddress })}
+              >
+                Login
+              </button>
+              <button type="button" className="transparent" onClick={logout}>
+                Disconnect
+              </button>
+            </>
+          ) : null}
+
+          {!walletAddress && !token ? (
+            <button
+              type="button"
+              className="transparent"
+              onClick={async () => updateSynthetix(await connect())}
+            >
+              Connect
+            </button>
+          ) : null}
+        </nav>
+      </header>
+
+      <main className="responsive">
+        <div className="grid medium-height">
+          <div className="s12 m6 l4 medium-padding fill bottom-shadow medium-height">
+            {permissions.data.isGranted && token ? (
+              <form className="grid medium-padding" onSubmit={handleFileUploadSubmit}>
+                <button
+                  type="button"
+                  className="transparent s12 m12 s12"
+                  onClick={() => fileUpload.current.click()}
+                >
                   Select File
                 </button>
                 <input
@@ -153,51 +203,27 @@ export function App() {
                   }}
                   style={{ display: 'none' }}
                 />
-                {fileName && <div>Selected file: {fileName}</div>}
-              </div>
-              <button type="submit" disabled={!selectedFile}>
-                Submit
-              </button>
-            </form>
-          ) : (
-            <h3>Please login and request access permissions to use</h3>
-          )}
+                {fileName && (
+                  <div className="s12 m12 s12 center-align">Selected file: {fileName}</div>
+                )}
+                <button type="submit" className="transparent s12 m12 s12" disabled={!selectedFile}>
+                  Submit
+                </button>
+              </form>
+            ) : (
+              <h5 className="center-align">Please login and request access permissions to use</h5>
+            )}
+          </div>
+
+          {walletAddress && token ? <AccessControl /> : null}
+          {image ? (
+            <div className="s12 m12 l12">
+              <img src={image} alt="User uploaded file" className="responsive" />
+            </div>
+          ) : null}
         </div>
-        {walletAddress && token ? <AccessControl /> : null}
-      </div>
-      {image ? <img src={image} alt="User uploaded file" /> : null}
-      {/* temporary solution for process tracking */}
-      <div
-        style={{
-          border: '2px solid orange',
-          backgroundColor: 'rgba(255, 165, 0, 0.2)',
-          padding: '0.4em',
-          marginBottom: '0.4em',
-          borderRadius: '0.4em',
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          overflow: 'auto',
-          maxHeight: '40%',
-        }}
-      >
-        <h5>debugging info block</h5>
-        <h5>{`Account: ${walletAddress?.substring(0, 6)}`}</h5>
-        <h5>{`Chain ID: ${chainId}(${
-          chainId === `0x${Number(11155420).toString(16)}` ? 'OP Sepolia' : 'other'
-        })`}</h5>
-        {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
-        {signupMutation.isPending || (verificationMutation.isPending && <div>Loading..</div>)}
-        {signupMutation.isError && <div>Error: {signupMutation.error.message}</div>}
-        {verificationMutation.isError && <div>Error: {verificationMutation.error.message}</div>}
-        {kuboIpfsAddMutation.isPending && <div>Uploading file...</div>}
-        {kuboIpfsAddMutation.isSuccess && <div>File uploaded successfully</div>}
-        {kuboIpfsAddMutation.isError && (
-          <div>Error uploading file: {kuboIpfsAddMutation.error.message}</div>
-        )}
-        <pre>{JSON.stringify(kuboIpfsAddMutation.data, null, 2)}</pre>
-      </div>
-    </div>
+      </main>
+      <NetworkMismatchSnackbar />
+    </>
   );
 }
