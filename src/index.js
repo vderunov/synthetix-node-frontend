@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { ethers } from 'ethers';
-import React, { useCallback, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
 import { SynthetixProvider, useSynthetix } from './useSynthetix';

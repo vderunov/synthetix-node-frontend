@@ -9,6 +9,7 @@ export function restoreToken({ walletAddress }) {
       : {};
     return tokens[walletAddress];
   } catch (e) {
+    console.error('Restore token error:', e);
     return undefined;
   }
 }

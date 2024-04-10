@@ -1,6 +1,8 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRef, useState } from 'react';
+import AccessControl from './AccessControl';
 import Banner from './Banner';
+import usePermissions from './usePermissions';
 import { useSynthetix } from './useSynthetix';
 import { getApiUrl, saveToken } from './utils';
 
@@ -26,6 +28,7 @@ const makeUnauthenticatedRequest = async (endpoint, data) => {
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
   const { walletAddress, token, logout, connect, signer, chainId } = synthetix;
+  const permissions = usePermissions();
   const fileUpload = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState('');
@@ -80,7 +83,7 @@ export function App() {
     onSuccess: (data) => setImage(URL.createObjectURL(data)),
   });
 
-  const handleFormSubmit = (event) => {
+  const handleFileUploadSubmit = (event) => {
     event.preventDefault();
     const formData = new FormData();
     formData.append('file', selectedFile);
@@ -131,35 +134,59 @@ export function App() {
             ) : null}
           </div>
         </div>
-
-        <form onSubmit={handleFormSubmit}>
-          <div>
-            <button type="button" onClick={() => fileUpload.current.click()}>
-              Select File
-            </button>
-            <input
-              type="file"
-              accept=".png"
-              ref={fileUpload}
-              onChange={({ target }) => {
-                setSelectedFile(target.files[0]);
-                setFileName(target.files[0].name);
-              }}
-              style={{ display: 'none' }}
-            />
-            {fileName && <div>Selected file: {fileName}</div>}
-          </div>
-          <button type="submit" disabled={!selectedFile}>
-            Submit
-          </button>
-        </form>
-        {image ? <img src={image} alt="User uploaded file" /> : null}
-
-        {/* temporary solution for process tracking */}
-        <h2>{`Account: ${walletAddress?.substring(0, 6)}`}</h2>
-        <h2>{`Chain ID: ${chainId}(${
+      </div>
+      <div className="container">
+        <div className="block">
+          {permissions.data.isGranted && token ? (
+            <form onSubmit={handleFileUploadSubmit}>
+              <div>
+                <button type="button" onClick={() => fileUpload.current.click()}>
+                  Select File
+                </button>
+                <input
+                  type="file"
+                  accept=".png"
+                  ref={fileUpload}
+                  onChange={({ target }) => {
+                    setSelectedFile(target.files[0]);
+                    setFileName(target.files[0].name);
+                  }}
+                  style={{ display: 'none' }}
+                />
+                {fileName && <div>Selected file: {fileName}</div>}
+              </div>
+              <button type="submit" disabled={!selectedFile}>
+                Submit
+              </button>
+            </form>
+          ) : (
+            <h3>Please login and request access permissions to use</h3>
+          )}
+        </div>
+        {walletAddress && token ? <AccessControl /> : null}
+      </div>
+      {image ? <img src={image} alt="User uploaded file" /> : null}
+      {/* temporary solution for process tracking */}
+      <div
+        style={{
+          border: '2px solid orange',
+          backgroundColor: 'rgba(255, 165, 0, 0.2)',
+          padding: '0.4em',
+          marginBottom: '0.4em',
+          borderRadius: '0.4em',
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          overflow: 'auto',
+          maxHeight: '40%',
+        }}
+      >
+        <h5>debugging info block</h5>
+        <h5>{`Account: ${walletAddress?.substring(0, 6)}`}</h5>
+        <h5>{`Chain ID: ${chainId}(${
           chainId === `0x${Number(11155420).toString(16)}` ? 'OP Sepolia' : 'other'
-        })`}</h2>
+        })`}</h5>
         {signupMutation.isSuccess && verificationMutation.isSuccess && <div>Signup successful</div>}
         {signupMutation.isPending || (verificationMutation.isPending && <div>Loading..</div>)}
         {signupMutation.isError && <div>Error: {signupMutation.error.message}</div>}
