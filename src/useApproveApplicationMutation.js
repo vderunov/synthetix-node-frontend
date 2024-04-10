@@ -12,10 +12,9 @@ function useApproveApplicationMutation() {
       const contract = new Contract(address, abi, synthetix.signer);
       const tx = await contract.approveApplication(wallet);
       await tx.wait();
-    },
-    onSuccess: () => {
+
       queryClient.invalidateQueries({
-        queryKey: [synthetix.chainId, synthetix.walletAddress, 'permissions'],
+        queryKey: [synthetix.chainId, wallet, 'permissions'],
       });
     },
     onError: console.error,

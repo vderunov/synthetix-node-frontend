@@ -8,7 +8,8 @@ export function restoreToken({ walletAddress }) {
       ? JSON.parse(window.localStorage.getItem('tokens'))
       : {};
     return tokens[walletAddress];
-  } catch {
+  } catch (e) {
+    console.error('Restore token error:', e);
     return undefined;
   }
 }
