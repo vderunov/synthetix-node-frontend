@@ -1,29 +1,29 @@
 import { ethers } from 'ethers';
 import { useState } from 'react';
-import useApplyForWhitelistMutation from './useApplyForWhitelistMutation';
 import useApproveApplicationMutation from './useApproveApplicationMutation';
 import usePermissions from './usePermissions';
-import useRenounceAssignedRoleMutation from './useRenounceAssignedRoleMutation';
-import useRevokeAccessMutation from './useRevokeAccessMutation';
+import useRejectApplicationMutation from './useRejectApplicationMutation';
+import useSubmitApplicationMutation from './useSubmitApplicationMutation';
+import useWithdrawApplicationMutation from './useWithdrawApplicationMutation';
 
 function AccessControl() {
   const [userApproveWallet, setUserApproveWallet] = useState('');
   const [userApproveWalletError, setUserApproveWalletError] = useState(false);
-  const [userRevokeWallet, setUserRevokeWallet] = useState('');
+  const [userRejectWallet, setUserRejectWallet] = useState('');
   const [userRevokeWalletError, setUserRevokeWalletError] = useState(false);
 
   const permissions = usePermissions();
   const approveApplicationMutation = useApproveApplicationMutation();
-  const revokeAccessMutation = useRevokeAccessMutation();
-  const applyForWhitelistMutation = useApplyForWhitelistMutation();
-  const renounceAssignedRoleMutation = useRenounceAssignedRoleMutation();
+  const rejectApplicationMutation = useRejectApplicationMutation();
+  const submitApplicationMutation = useSubmitApplicationMutation();
+  const withdrawApplicationMutation = useWithdrawApplicationMutation();
 
   const isLoading =
     permissions.isFetching ||
     approveApplicationMutation.isPending ||
-    revokeAccessMutation.isPending ||
-    applyForWhitelistMutation.isPending ||
-    renounceAssignedRoleMutation.isPending;
+    rejectApplicationMutation.isPending ||
+    submitApplicationMutation.isPending ||
+    withdrawApplicationMutation.isPending;
 
   const handleApproveApplicationSubmit = async (e) => {
     e.preventDefault();
@@ -35,11 +35,11 @@ function AccessControl() {
     }
   };
 
-  const handleRevokeAccessSubmit = async (e) => {
+  const handleRejectApplicationSubmit = async (e) => {
     e.preventDefault();
 
-    if (ethers.isAddress(userRevokeWallet)) {
-      revokeAccessMutation.mutate(userRevokeWallet);
+    if (ethers.isAddress(userRejectWallet)) {
+      rejectApplicationMutation.mutate(userRejectWallet);
     } else {
       setUserRevokeWalletError(true);
     }
@@ -57,7 +57,7 @@ function AccessControl() {
           <button
             type="button"
             className="transparent s12 m12 s12"
-            onClick={() => renounceAssignedRoleMutation.mutate()}
+            onClick={() => withdrawApplicationMutation.mutate()}
           >
             Renounce assigned role
           </button>
@@ -71,7 +71,7 @@ function AccessControl() {
           <button
             type="button"
             className="transparent s12 m12 s12"
-            onClick={() => applyForWhitelistMutation.mutate()}
+            onClick={() => submitApplicationMutation.mutate()}
           >
             Apply for whitelist
           </button>
@@ -111,14 +111,14 @@ function AccessControl() {
             </button>
           </form>
 
-          <form className="medium-padding" onSubmit={handleRevokeAccessSubmit}>
+          <form className="medium-padding" onSubmit={handleRejectApplicationSubmit}>
             <div className={`field label border ${userRevokeWalletError && 'invalid'}`}>
               <input
                 type="text"
-                value={userRevokeWallet}
+                value={userRejectWallet}
                 onChange={(e) => {
                   setUserRevokeWalletError(false);
-                  setUserRevokeWallet(e.target.value);
+                  setUserRejectWallet(e.target.value);
                 }}
               />
               <label>Enter wallet address</label>
@@ -127,7 +127,7 @@ function AccessControl() {
             <button
               type="submit"
               className="transparent"
-              disabled={!userRevokeWallet || userRevokeWalletError}
+              disabled={!userRejectWallet || userRevokeWalletError}
             >
               Submit
             </button>
