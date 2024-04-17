@@ -1,7 +1,7 @@
 {
   "name": "synthetix-node-frontend",
   "version": "0.0.1",
-  "main": "src/index.js",
+  "main": "src/index.jsx",
   "repository": "synthetix-node-frontend",
   "author": "Synthetix",
   "license": "MIT",

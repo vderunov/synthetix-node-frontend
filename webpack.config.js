@@ -48,7 +48,7 @@ const devServer = {
 };
 
 const babelRule = {
-  test: /\.(js)$/,
+  test: /\.(js|jsx)$/,
   include: [
     // Only include code in the src to ensure that library functions do not need compilation
     /src/,
@@ -77,7 +77,7 @@ module.exports = {
   devtool: isProd ? 'inline-source-map' : isTest ? false : 'source-map',
   devServer,
   mode: isProd ? 'production' : 'development',
-  entry: './src/index.js',
+  entry: './src/index.jsx',
   optimization: {
     moduleIds: 'named',
     minimize: false,
@@ -106,7 +106,7 @@ module.exports = {
   ],
 
   resolve: {
-    extensions: ['.js'],
+    extensions: ['.js', '.jsx'],
   },
 
   module: {

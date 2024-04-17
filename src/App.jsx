@@ -184,7 +184,9 @@ export function App() {
       <main className="responsive">
         <div className="grid medium-height">
           <div className="s12 m6 l4 medium-padding fill bottom-shadow medium-height">
-            {permissions.data.isGranted && token ? (
+            {permissions.isFetching ? (
+              <h5 className="center-align">Loading...</h5>
+            ) : permissions.data.isGranted && token ? (
               <form className="grid medium-padding" onSubmit={handleFileUploadSubmit}>
                 <button
                   type="button"
