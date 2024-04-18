@@ -37,8 +37,8 @@ function AccessControl() {
     if (ethers.isAddress(userApproveWallet)) {
       approveApplicationMutation.mutate(userApproveWallet, {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ['approved-wallets'] });
-          queryClient.invalidateQueries({ queryKey: ['submitted-wallets'] });
+          queryClient.invalidateQueries({ queryKey: [synthetix.chainId, 'approved-wallets'] });
+          queryClient.invalidateQueries({ queryKey: [synthetix.chainId, 'submitted-wallets'] });
         },
       });
     } else {
@@ -57,7 +57,7 @@ function AccessControl() {
   };
 
   const approvedWallets = useQuery({
-    queryKey: ['approved-wallets'],
+    queryKey: [synthetix.chainId, 'approved-wallets'],
     queryFn: async () => {
       const response = await fetch(`${getApiUrl()}approved-wallets`, {
         method: 'GET',
@@ -72,7 +72,7 @@ function AccessControl() {
   });
 
   const submittedWallets = useQuery({
-    queryKey: ['submitted-wallets'],
+    queryKey: [synthetix.chainId, 'submitted-wallets'],
     queryFn: async () => {
       const response = await fetch(`${getApiUrl()}submitted-wallets`, {
         method: 'GET',
