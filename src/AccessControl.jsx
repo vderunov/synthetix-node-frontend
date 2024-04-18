@@ -68,6 +68,7 @@ function AccessControl() {
       }
       return response.json();
     },
+    enabled: permissions.data.isAdmin === true,
     select: (data) => data.data.wallets,
   });
 
@@ -83,6 +84,7 @@ function AccessControl() {
       }
       return response.json();
     },
+    enabled: permissions.data.isAdmin === true,
     select: (data) => data.data.wallets,
   });
 
