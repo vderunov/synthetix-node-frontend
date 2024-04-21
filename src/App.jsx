@@ -152,7 +152,6 @@ export function App() {
                     <input
                       className="file-input"
                       type="file"
-                      name="resume"
                       accept=".png"
                       onChange={({ target }) => {
                         setSelectedFile(target.files[0]);
