@@ -155,7 +155,7 @@ export function App() {
                       accept=".png"
                       onChange={({ target }) => {
                         setSelectedFile(target.files[0]);
-                        setFileName(target.files[0].name);
+                        setFileName(target.files[0]?.name);
                       }}
                     />
                     <span className="file-cta">
