@@ -1,5 +1,5 @@
-import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import AccessControl from './AccessControl';
 import NetworkMismatchBanner from './NetworkMismatchBanner';
 import usePermissions from './usePermissions';
@@ -69,19 +69,19 @@ export function App() {
     },
   });
 
-  const kuboIpfsCatMutation = useMutation({
-    mutationFn: async (ipfsPath) => {
-      const response = await fetch(`${getApiUrl()}api/v0/cat?arg=${ipfsPath}`, {
+  const kuboIpfsCatFile = useQuery({
+    queryKey: [synthetix.chainId, hash, 'kuboIpfsCatFile'],
+    queryFn: async () => {
+      const response = await fetch(`${getApiUrl()}api/v0/cat?arg=${hash}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-      return response.text();
+      return response.blob();
     },
-    onSuccess: downloadFile,
+    enabled: false,
   });
 
   const handleFileUploadSubmit = (event) => {
@@ -91,10 +91,16 @@ export function App() {
     kuboIpfsAddMutation.mutate(formData);
   };
 
-  const handleKuboIpfsCatSubmit = (event) => {
+  const handleKuboIpfsCatFileSubmit = (event) => {
     event.preventDefault();
-    kuboIpfsCatMutation.mutate(hash);
+    kuboIpfsCatFile.refetch();
   };
+
+  useEffect(() => {
+    if (kuboIpfsCatFile.data) {
+      downloadFile(kuboIpfsCatFile.data);
+    }
+  }, [kuboIpfsCatFile.data]);
 
   return (
     <>
@@ -200,7 +206,7 @@ export function App() {
         <section className="section">
           <div className="container">
             <div className="box">
-              <form onSubmit={handleKuboIpfsCatSubmit}>
+              <form onSubmit={handleKuboIpfsCatFileSubmit}>
                 <div className="field">
                   <label className="label">IPFS hash(CID)</label>
                   <input
@@ -210,13 +216,13 @@ export function App() {
                     value={hash}
                     onChange={({ target }) => setHash(target.value)}
                   />
-                  {kuboIpfsCatMutation.isError ? (
-                    <p className="help is-danger">{kuboIpfsCatMutation.error.message}</p>
+                  {kuboIpfsCatFile.isError ? (
+                    <p className="help is-danger">{kuboIpfsCatFile.error.message}</p>
                   ) : null}
                 </div>
                 <button
                   type="submit"
-                  className={`button is-link ${kuboIpfsCatMutation.isPending ? 'is-skeleton' : ''}`}
+                  className={`button is-link ${kuboIpfsCatFile.isFetching ? 'is-skeleton' : ''}`}
                   disabled={!hash}
                 >
                   Download
