@@ -2,18 +2,26 @@ import React from 'react';
 
 function WalletsList({ title, data, isFetching, isError }) {
   if (isFetching) {
-    return <div>Loading...</div>;
+    return <div className="skeleton-block" />;
   }
 
   if (isError) {
-    return <div>Error fetching wallets</div>;
+    return <p className="has-text-danger">Error fetching wallets</p>;
   }
 
   return (
-    <div className="medium-padding">
-      <h6 className="s12 m12 s12 center-align">{title}:</h6>
+    <div className="content">
+      <h4 className="title is-4">{title}:</h4>
       <ol>
-        {data.length > 0 ? data.map(({ id }) => <li key={id}>{id}</li>) : <div>No wallets</div>}
+        {data?.length > 0 ? (
+          data.map(({ id }) => (
+            <li key={id}>
+              <div className="truncate">{id}</div>
+            </li>
+          ))
+        ) : (
+          <h2 className="subtitle">No wallets</h2>
+        )}
       </ol>
     </div>
   );

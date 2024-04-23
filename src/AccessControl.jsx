@@ -91,109 +91,130 @@ function AccessControl() {
   let content;
   switch (true) {
     case isLoading:
-      content = <progress className="s12 m12 s12" />;
+      content = <div className="skeleton-block" />;
       break;
     case permissions.data.isGranted:
-      content = <h5 className="s12 m12 s12 center-align">Access granted</h5>;
+      content = (
+        <div className="notification is-primary">
+          <h4 className="title is-4">Access granted</h4>
+        </div>
+      );
       break;
     case permissions.data.isPending:
       content = (
-        <>
-          <h5 className="s12 m12 s12 center-align">Please wait for approval</h5>
+        <div className="box">
+          <h4 className="title is-4">Please wait for approval</h4>
           <button
             type="button"
-            className="transparent s12 m12 s12"
+            className="button is-link"
             onClick={() => withdrawApplicationMutation.mutate()}
           >
             Renounce assigned role
           </button>
-        </>
+        </div>
       );
       break;
     default:
       content = (
-        <>
-          <h5 className="s12 m12 s12 center-align">Access control</h5>
+        <div className="box">
+          <h4 className="title is-4">Access control</h4>
           <button
             type="button"
-            className="transparent s12 m12 s12"
+            className="button is-link"
             onClick={() => submitApplicationMutation.mutate()}
           >
             Apply for whitelist
           </button>
-        </>
+        </div>
       );
   }
 
   return (
     <>
-      <div className="s12 m6 l4 medium-padding fill bottom-shadow medium-height">
-        <div className="grid">{content}</div>
-      </div>
+      <section className="section">
+        <div className="container">{content}</div>
+      </section>
       {permissions.data.isAdmin && !isLoading ? (
-        <div className="s12 m6 l4 medium-padding fill bottom-shadow">
-          <h5 className="center-align">Only for Admin</h5>
-          <form className="medium-padding" onSubmit={handleApproveApplicationSubmit}>
-            <div className={`field label border ${userApproveWalletError && 'invalid'}`}>
-              <input
-                type="text"
-                value={userApproveWallet}
-                onChange={(e) => {
-                  setUserApproveWalletError(false);
-                  setUserApproveWallet(e.target.value);
-                }}
-              />
-              <label>Enter wallet address</label>
-              <span className={userApproveWalletError ? 'error' : 'helper'}>
-                Approve application
-              </span>
+        <>
+          <section className="section">
+            <div className="container">
+              <div className="box">
+                <form className="mb-4" onSubmit={handleApproveApplicationSubmit}>
+                  <div className="field">
+                    <label className="label">Approve application</label>
+                    <div className="control">
+                      <input
+                        className={`input ${userApproveWalletError && 'is-danger'}`}
+                        type="text"
+                        placeholder="Enter wallet address"
+                        onChange={(e) => {
+                          setUserApproveWalletError(false);
+                          setUserApproveWallet(e.target.value);
+                        }}
+                      />
+                    </div>
+                    {userApproveWalletError ? (
+                      <p className="help is-danger">This address is invalid</p>
+                    ) : null}
+                  </div>
+                  <button
+                    type="submit"
+                    className="button is-link"
+                    disabled={!userApproveWallet || userApproveWalletError}
+                  >
+                    Submit
+                  </button>
+                </form>
+                <WalletsList
+                  title="Submitted wallets"
+                  data={submittedWallets.data}
+                  isFetching={submittedWallets.isFetching}
+                  isError={submittedWallets.isError}
+                  error={submittedWallets.error}
+                />
+              </div>
             </div>
-            <button
-              type="submit"
-              className="transparent"
-              disabled={!userApproveWallet || userApproveWalletError}
-            >
-              Submit
-            </button>
-          </form>
+          </section>
 
-          <form className="medium-padding" onSubmit={handleRejectApplicationSubmit}>
-            <div className={`field label border ${userRevokeWalletError && 'invalid'}`}>
-              <input
-                type="text"
-                value={userRejectWallet}
-                onChange={(e) => {
-                  setUserRevokeWalletError(false);
-                  setUserRejectWallet(e.target.value);
-                }}
-              />
-              <label>Enter wallet address</label>
-              <span className={userRevokeWalletError ? 'error' : 'helper'}>Revoke access</span>
+          <section className="section">
+            <div className="container">
+              <div className="box">
+                <form className="mb-4" onSubmit={handleRejectApplicationSubmit}>
+                  <div className="field">
+                    <label className="label">Revoke access</label>
+                    <div className="control">
+                      <input
+                        className={`input ${userRevokeWalletError && 'is-danger'}`}
+                        type="text"
+                        placeholder="Enter wallet address"
+                        onChange={(e) => {
+                          setUserRevokeWalletError(false);
+                          setUserRejectWallet(e.target.value);
+                        }}
+                      />
+                    </div>
+                    {userRevokeWalletError ? (
+                      <p className="help is-danger">This address is invalid</p>
+                    ) : null}
+                  </div>
+                  <button
+                    type="submit"
+                    className="button is-link"
+                    disabled={!userRejectWallet || userRevokeWalletError}
+                  >
+                    Submit
+                  </button>
+                </form>
+                <WalletsList
+                  title="Approved wallets"
+                  data={approvedWallets.data}
+                  isFetching={approvedWallets.isFetching}
+                  isError={approvedWallets.isError}
+                />
+              </div>
             </div>
-            <button
-              type="submit"
-              className="transparent"
-              disabled={!userRejectWallet || userRevokeWalletError}
-            >
-              Submit
-            </button>
-
-            <hr />
-
-            <WalletsList
-              title="Approved wallets"
-              data={approvedWallets.data}
-              isFetching={approvedWallets.isFetching}
-              isError={approvedWallets.isError}
-            />
-            <WalletsList
-              title="Submitted wallets"
-              data={submittedWallets.data}
-              isFetching={submittedWallets.isFetching}
-              isError={submittedWallets.isError}
-            />
-          </form>
-        </div>
+          </section>
+        </>
       ) : null}
     </>
   );

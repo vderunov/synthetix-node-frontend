@@ -1,10 +1,10 @@
-import { useMutation } from '@tanstack/react-query';
-import { useRef, useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import AccessControl from './AccessControl';
-import NetworkMismatchSnackbar from './NetworkMismatchSnackbar';
+import NetworkMismatchBanner from './NetworkMismatchBanner';
 import usePermissions from './usePermissions';
 import { useSynthetix } from './useSynthetix';
-import { getApiUrl, saveToken } from './utils';
+import { downloadFile, getApiUrl, saveToken } from './utils';
 
 const makeUnauthenticatedRequest = async (endpoint, data) => {
   const response = await fetch(`${getApiUrl()}${endpoint}`, {
@@ -27,12 +27,12 @@ const makeUnauthenticatedRequest = async (endpoint, data) => {
 
 export function App() {
   const [synthetix, updateSynthetix] = useSynthetix();
-  const { walletAddress, token, logout, connect, signer, chainId } = synthetix;
+  const { walletAddress, token, logout, connect, signer } = synthetix;
   const permissions = usePermissions();
-  const fileUpload = useRef(null);
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState('');
-  const [image, setImage] = useState('');
+  const [uploadResponse, setUploadResponse] = useState(null);
+  const [hash, setHash] = useState(window.localStorage.getItem('cid') ?? '');
 
   const signupMutation = useMutation({
     mutationFn: (data) => makeUnauthenticatedRequest('signup', data),
@@ -62,17 +62,18 @@ export function App() {
       }
       return response.json();
     },
-    onSuccess: ({ Hash }) => {
-      window.localStorage.setItem('cid', Hash);
-      kuboIpfsCatMutation.mutate(Hash);
+    onSuccess: (data) => {
+      window.localStorage.setItem('cid', data.Hash);
+      setUploadResponse(data);
+      setHash(data.Hash);
     },
   });
 
-  const kuboIpfsCatMutation = useMutation({
-    mutationFn: async (ipfsPath) => {
-      const response = await fetch(`${getApiUrl()}api/v0/cat?arg=${ipfsPath}`, {
+  const kuboIpfsCatFile = useQuery({
+    queryKey: [synthetix.chainId, hash, 'kuboIpfsCatFile'],
+    queryFn: async () => {
+      const response = await fetch(`${getApiUrl()}api/v0/cat?arg=${hash}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
@@ -80,7 +81,7 @@ export function App() {
       }
       return response.blob();
     },
-    onSuccess: (data) => setImage(URL.createObjectURL(data)),
+    enabled: false,
   });
 
   const handleFileUploadSubmit = (event) => {
@@ -90,142 +91,147 @@ export function App() {
     kuboIpfsAddMutation.mutate(formData);
   };
 
-  const handleSwitchChain = async () => {
-    await window.ethereum?.request({
-      method: 'wallet_switchEthereumChain',
-      params: [{ chainId: `0x${Number(11155420).toString(16)}` }],
-    });
+  const handleKuboIpfsCatFileSubmit = (event) => {
+    event.preventDefault();
+    kuboIpfsCatFile.refetch();
   };
+
+  useEffect(() => {
+    if (kuboIpfsCatFile.data) {
+      downloadFile(kuboIpfsCatFile.data);
+    }
+  }, [kuboIpfsCatFile.data]);
 
   return (
     <>
+      <NetworkMismatchBanner />
       <header>
-        <nav className="m l">
-          <h5>Synthetix node Frontend</h5>
-          <div className="max" />
-          {walletAddress && token ? (
-            <button type="button" className="transparent" onClick={logout}>
-              Logout
-            </button>
-          ) : null}
+        <nav className="navbar" aria-label="main navigation">
+          <div className="navbar-start">
+            <div className="navbar-item">
+              <h3 className="title is-3">Synthetix node Frontend</h3>
+            </div>
+          </div>
+          <div className="navbar-end">
+            <div className="navbar-item">
+              <div className="buttons">
+                {walletAddress && token ? (
+                  <button type="button" className="button is-warning" onClick={logout}>
+                    Log Out
+                  </button>
+                ) : null}
 
-          {`0x${Number(11155420).toString(16)}` === chainId ? null : (
-            <button type="button" className="transparent" onClick={handleSwitchChain}>
-              Change chain to OP Sepolia
-            </button>
-          )}
+                {walletAddress && !token ? (
+                  <>
+                    <button
+                      type="button"
+                      className="button is-light"
+                      onClick={() => signupMutation.mutate({ walletAddress })}
+                    >
+                      Log In
+                    </button>
+                    <button type="button" className="button is-warning" onClick={logout}>
+                      Disconnect
+                    </button>
+                  </>
+                ) : null}
 
-          {walletAddress && !token ? (
-            <>
-              <button
-                type="button"
-                className="transparent"
-                onClick={() => signupMutation.mutate({ walletAddress })}
-              >
-                Login
-              </button>
-              <button type="button" className="transparent" onClick={logout}>
-                Disconnect
-              </button>
-            </>
-          ) : null}
-
-          {!walletAddress && !token ? (
-            <button
-              type="button"
-              className="transparent"
-              onClick={async () => updateSynthetix(await connect())}
-            >
-              Connect
-            </button>
-          ) : null}
-        </nav>
-
-        <nav className="s">
-          {walletAddress && token ? (
-            <button type="button" className="transparent" onClick={logout}>
-              Logout
-            </button>
-          ) : null}
-
-          {`0x${Number(11155420).toString(16)}` === chainId ? null : (
-            <button type="button" className="transparent" onClick={handleSwitchChain}>
-              Change chain to OP Sepolia
-            </button>
-          )}
-
-          {walletAddress && !token ? (
-            <>
-              <button
-                type="button"
-                className="transparent"
-                onClick={() => signupMutation.mutate({ walletAddress })}
-              >
-                Login
-              </button>
-              <button type="button" className="transparent" onClick={logout}>
-                Disconnect
-              </button>
-            </>
-          ) : null}
-
-          {!walletAddress && !token ? (
-            <button
-              type="button"
-              className="transparent"
-              onClick={async () => updateSynthetix(await connect())}
-            >
-              Connect
-            </button>
-          ) : null}
+                {!walletAddress && !token ? (
+                  <button
+                    type="button"
+                    className="button is-light"
+                    onClick={async () => updateSynthetix(await connect())}
+                  >
+                    Connect
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </div>
         </nav>
       </header>
 
-      <main className="responsive">
-        <div className="grid medium-height">
-          <div className="s12 m6 l4 medium-padding fill bottom-shadow medium-height">
-            {permissions.isFetching ? (
-              <h5 className="center-align">Loading...</h5>
-            ) : permissions.data.isGranted && token ? (
-              <form className="grid medium-padding" onSubmit={handleFileUploadSubmit}>
+      {walletAddress && token ? <AccessControl /> : null}
+
+      <section className="section">
+        <div className="container">
+          {permissions.isFetching ? (
+            <div className="skeleton-block" />
+          ) : permissions.data.isGranted && token ? (
+            <div className="box">
+              <form onSubmit={handleFileUploadSubmit}>
+                <div className="file has-name">
+                  <label className="file-label">
+                    <input
+                      className="file-input"
+                      type="file"
+                      onChange={({ target }) => {
+                        setSelectedFile(target.files[0]);
+                        setFileName(target.files[0]?.name);
+                      }}
+                    />
+                    <span className="file-cta">
+                      <span className="file-label">Choose a file…</span>
+                    </span>
+                    <span className="file-name">{fileName}</span>
+                  </label>
+                </div>
+                <div className="control">
+                  <button
+                    type="submit"
+                    className={`button is-link ${
+                      kuboIpfsAddMutation.isPending ? 'is-skeleton' : ''
+                    }`}
+                    disabled={!selectedFile}
+                  >
+                    Submit
+                  </button>
+                </div>
+              </form>
+              {uploadResponse ? (
+                <pre className="mt-4">{JSON.stringify(uploadResponse, null, 2)}</pre>
+              ) : null}
+            </div>
+          ) : (
+            <div className="box">
+              <h2 className="subtitle">
+                Please <strong>login</strong> and <strong>request</strong> access permissions to use
+              </h2>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {permissions.data.isGranted && token ? (
+        <section className="section">
+          <div className="container">
+            <div className="box">
+              <form onSubmit={handleKuboIpfsCatFileSubmit}>
+                <div className="field">
+                  <label className="label">IPFS hash(CID)</label>
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder="Example: QmRjX3..."
+                    value={hash}
+                    onChange={({ target }) => setHash(target.value)}
+                  />
+                  {kuboIpfsCatFile.isError ? (
+                    <p className="help is-danger">{kuboIpfsCatFile.error.message}</p>
+                  ) : null}
+                </div>
                 <button
-                  type="button"
-                  className="transparent s12 m12 s12"
-                  onClick={() => fileUpload.current.click()}
+                  type="submit"
+                  className={`button is-link ${kuboIpfsCatFile.isFetching ? 'is-skeleton' : ''}`}
+                  disabled={!hash}
                 >
-                  Select File
-                </button>
-                <input
-                  type="file"
-                  accept=".png"
-                  ref={fileUpload}
-                  onChange={({ target }) => {
-                    setSelectedFile(target.files[0]);
-                    setFileName(target.files[0].name);
-                  }}
-                  style={{ display: 'none' }}
-                />
-                {fileName && (
-                  <div className="s12 m12 s12 center-align">Selected file: {fileName}</div>
-                )}
-                <button type="submit" className="transparent s12 m12 s12" disabled={!selectedFile}>
-                  Submit
+                  Download
                 </button>
               </form>
-            ) : (
-              <h5 className="center-align">Please login and request access permissions to use</h5>
-            )}
-          </div>
-
-          {walletAddress && token ? <AccessControl /> : null}
-          {image ? (
-            <div className="s12 m12 l12">
-              <img src={image} alt="User uploaded file" className="responsive" />
             </div>
-          ) : null}
-        </div>
-      </main>
-      <NetworkMismatchSnackbar />
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }

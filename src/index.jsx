@@ -7,7 +7,7 @@ import { App } from './App';
 import { SynthetixProvider, useSynthetix } from './useSynthetix';
 import { restoreToken } from './utils';
 
-import 'beercss';
+import 'bulma/css/bulma.min.css';
 import './main.css';
 
 const queryClient = new QueryClient();
