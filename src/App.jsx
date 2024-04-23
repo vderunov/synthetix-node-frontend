@@ -1,10 +1,10 @@
-import { useMutation } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import AccessControl from './AccessControl';
 import NetworkMismatchBanner from './NetworkMismatchBanner';
 import usePermissions from './usePermissions';
 import { useSynthetix } from './useSynthetix';
-import { getApiUrl, saveToken } from './utils';
+import { downloadFile, getApiUrl, saveToken } from './utils';
 
 const makeUnauthenticatedRequest = async (endpoint, data) => {
   const response = await fetch(`${getApiUrl()}${endpoint}`, {
@@ -31,7 +31,8 @@ export function App() {
   const permissions = usePermissions();
   const [selectedFile, setSelectedFile] = useState(null);
   const [fileName, setFileName] = useState('');
-  const [image, setImage] = useState('');
+  const [uploadResponse, setUploadResponse] = useState(null);
+  const [hash, setHash] = useState(window.localStorage.getItem('cid') ?? '');
 
   const signupMutation = useMutation({
     mutationFn: (data) => makeUnauthenticatedRequest('signup', data),
@@ -61,17 +62,18 @@ export function App() {
       }
       return response.json();
     },
-    onSuccess: ({ Hash }) => {
-      window.localStorage.setItem('cid', Hash);
-      kuboIpfsCatMutation.mutate(Hash);
+    onSuccess: (data) => {
+      window.localStorage.setItem('cid', data.Hash);
+      setUploadResponse(data);
+      setHash(data.Hash);
     },
   });
 
-  const kuboIpfsCatMutation = useMutation({
-    mutationFn: async (ipfsPath) => {
-      const response = await fetch(`${getApiUrl()}api/v0/cat?arg=${ipfsPath}`, {
+  const kuboIpfsCatFile = useQuery({
+    queryKey: [synthetix.chainId, hash, 'kuboIpfsCatFile'],
+    queryFn: async () => {
+      const response = await fetch(`${getApiUrl()}api/v0/cat?arg=${hash}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!response.ok) {
@@ -79,7 +81,7 @@ export function App() {
       }
       return response.blob();
     },
-    onSuccess: (data) => setImage(URL.createObjectURL(data)),
+    enabled: false,
   });
 
   const handleFileUploadSubmit = (event) => {
@@ -88,6 +90,17 @@ export function App() {
     formData.append('file', selectedFile);
     kuboIpfsAddMutation.mutate(formData);
   };
+
+  const handleKuboIpfsCatFileSubmit = (event) => {
+    event.preventDefault();
+    kuboIpfsCatFile.refetch();
+  };
+
+  useEffect(() => {
+    if (kuboIpfsCatFile.data) {
+      downloadFile(kuboIpfsCatFile.data);
+    }
+  }, [kuboIpfsCatFile.data]);
 
   return (
     <>
@@ -152,7 +165,6 @@ export function App() {
                     <input
                       className="file-input"
                       type="file"
-                      accept=".png"
                       onChange={({ target }) => {
                         setSelectedFile(target.files[0]);
                         setFileName(target.files[0]?.name);
@@ -168,9 +180,7 @@ export function App() {
                   <button
                     type="submit"
                     className={`button is-link ${
-                      kuboIpfsAddMutation.isPending || kuboIpfsCatMutation.isPending
-                        ? 'is-skeleton'
-                        : ''
+                      kuboIpfsAddMutation.isPending ? 'is-skeleton' : ''
                     }`}
                     disabled={!selectedFile}
                   >
@@ -178,6 +188,9 @@ export function App() {
                   </button>
                 </div>
               </form>
+              {uploadResponse ? (
+                <pre className="mt-4">{JSON.stringify(uploadResponse, null, 2)}</pre>
+              ) : null}
             </div>
           ) : (
             <div className="box">
@@ -189,19 +202,36 @@ export function App() {
         </div>
       </section>
 
-      <section className="section">
-        <div className="container">
-          {image ? (
-            <figure className="image">
-              <img
-                src={image}
-                alt="User uploaded file"
-                style={{ maxWidth: '500px', maxHeight: '500px', width: 'auto', height: 'auto' }}
-              />
-            </figure>
-          ) : null}
-        </div>
-      </section>
+      {permissions.data.isGranted && token ? (
+        <section className="section">
+          <div className="container">
+            <div className="box">
+              <form onSubmit={handleKuboIpfsCatFileSubmit}>
+                <div className="field">
+                  <label className="label">IPFS hash(CID)</label>
+                  <input
+                    className="input"
+                    type="text"
+                    placeholder="Example: QmRjX3..."
+                    value={hash}
+                    onChange={({ target }) => setHash(target.value)}
+                  />
+                  {kuboIpfsCatFile.isError ? (
+                    <p className="help is-danger">{kuboIpfsCatFile.error.message}</p>
+                  ) : null}
+                </div>
+                <button
+                  type="submit"
+                  className={`button is-link ${kuboIpfsCatFile.isFetching ? 'is-skeleton' : ''}`}
+                  disabled={!hash}
+                >
+                  Download
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+      ) : null}
     </>
   );
 }
