@@ -11,11 +11,15 @@
     "lint": "biome check --apply ."
   },
   "dependencies": {
+    "@helia/car": "^4.0.0",
+    "@helia/unixfs": "^4.0.0",
+    "@ipld/car": "^5.3.3",
     "@tanstack/react-query": "^5.29.2",
     "@vderunov/whitelist-contract": "^2.0.0",
     "bulma": "^1.0.0",
     "dotenv": "^16.4.5",
     "ethers": "^6.11.1",
+    "helia": "^5.1.0",
     "react": "^18.2.0"
   },
   "devDependencies": {
