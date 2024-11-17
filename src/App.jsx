@@ -1,6 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import AccessControl from './AccessControl';
+import FileUploader from './FileUploader';
 import FolderUploader from './FolderUploader';
 import NetworkMismatchBanner from './NetworkMismatchBanner';
 import usePermissions from './usePermissions';
@@ -154,7 +155,12 @@ export function App() {
 
       {walletAddress && token ? <AccessControl /> : null}
 
-      {permissions.data.isGranted && token ? <FolderUploader /> : null}
+      {permissions.data.isGranted && token ? (
+        <>
+          <FolderUploader />
+          <FileUploader />
+        </>
+      ) : null}
 
       <section className="section">
         <div className="container">

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useHelia } from './useHelia';
 import { carWriterOutToBlob, downloadCarFile, readFileAsUint8Array } from './utils';
 
-function FolderUploader() {
+function FileUploader() {
   const { heliaCar, fs, error, starting } = useHelia();
   const [files, setFiles] = useState([]);
   const [carBlob, setCarBlob] = useState(null);
@@ -20,16 +20,10 @@ function FolderUploader() {
     }
 
     const asyncFn = async () => {
-      const inputFiles = await Promise.all(
-        files.map(async (file) => ({
-          path: file.webkitRelativePath || file.name,
-          content: await readFileAsUint8Array(file),
-        }))
-      );
-
-      let rootCID;
-      for await (const entry of fs.addAll(inputFiles)) {
-        rootCID = entry.cid;
+      let rootCID = await fs.addDirectory();
+      for await (const file of files) {
+        const fileCid = await fs.addBytes(await readFileAsUint8Array(file));
+        rootCID = await fs.cp(fileCid, rootCID, file.name);
       }
 
       const { writer, out } = await CarWriter.create(rootCID);
@@ -39,7 +33,6 @@ function FolderUploader() {
       setCarBlob(await carBlob);
       setRootCID(rootCID);
     };
-
     asyncFn();
 
     return () => {
@@ -66,18 +59,22 @@ function FolderUploader() {
         <div className="box">
           <div className="file has-name">
             <label className="file-label">
-              <input
-                className="file-input"
-                type="file"
-                webkitdirectory="true"
-                multiple
-                onChange={handleFileEvent}
-              />
+              <input className="file-input" type="file" multiple onChange={handleFileEvent} />
               <span className="file-cta">
-                <span className="file-label">Choose a folder…</span>
+                <span className="file-label">Select Files</span>
               </span>
             </label>
           </div>
+
+          {files.length > 0 ? (
+            <div className="list pb-4">
+              {files.map(({ name }) => (
+                <div key={name} className="list-item">
+                  <div className="list-item-title">{name}</div>
+                </div>
+              ))}
+            </div>
+          ) : null}
 
           {rootCID == null || files.length === 0 ? null : (
             <>
@@ -107,4 +104,4 @@ function FolderUploader() {
   );
 }
 
-export default FolderUploader;
+export default FileUploader;
