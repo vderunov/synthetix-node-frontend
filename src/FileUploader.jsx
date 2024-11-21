@@ -1,4 +1,5 @@
 import { CarWriter } from '@ipld/car/writer';
+import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHelia } from './useHelia';
 import { carWriterOutToBlob, downloadCarFile, readFileAsUint8Array } from './utils';
@@ -14,12 +15,13 @@ function FileUploader() {
     setFiles(filesToUpload);
   }, []);
 
-  useEffect(() => {
-    if (fs == null || heliaCar == null || files.length === 0) {
-      return;
-    }
-
-    const asyncFn = async () => {
+  const carBlobFilerQuery = useQuery({
+    enabled: fs !== null && heliaCar !== null && files.length > 0,
+    queryKey: [
+      'carBlobFilerQuery',
+      files.map((file) => `${file.name}_${file.lastModified}`).join(','),
+    ],
+    queryFn: async () => {
       let rootCID = await fs.addDirectory();
       for await (const file of files) {
         const fileCid = await fs.addBytes(await readFileAsUint8Array(file));
@@ -30,16 +32,22 @@ function FileUploader() {
       const carBlob = carWriterOutToBlob(out);
       await heliaCar.export(rootCID, writer);
 
-      setCarBlob(await carBlob);
-      setRootCID(rootCID);
-    };
-    asyncFn();
+      return {
+        carBlob: await carBlob,
+        rootCID,
+      };
+    },
+  });
 
-    return () => {
+  useEffect(() => {
+    if (carBlobFilerQuery.data) {
+      setCarBlob(carBlobFilerQuery.data.carBlob);
+      setRootCID(carBlobFilerQuery.data.rootCID);
+    } else {
       setCarBlob(null);
       setRootCID(null);
-    };
-  }, [files, fs, heliaCar]);
+    }
+  }, [carBlobFilerQuery.data]);
 
   const handleDownload = useCallback(() => {
     downloadCarFile(carBlob);
@@ -90,7 +98,7 @@ function FileUploader() {
               </div>
               <button
                 type="button"
-                className="button is-link"
+                className={`button is-link ${carBlobFilerQuery.isPending ? 'is-loading' : ''}`}
                 disabled={!carBlob}
                 onClick={handleDownload}
               >
