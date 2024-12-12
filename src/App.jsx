@@ -9,7 +9,9 @@ import { useSynthetix } from './useSynthetix';
 import { downloadFile, getApiUrl, saveToken } from './utils';
 
 const makeUnauthenticatedRequest = async (endpoint, data) => {
-  const response = await fetch(`${getApiUrl()}${endpoint}`, {
+  console.log(`/api/${endpoint}`);
+  // const response = await fetch(`${getApiUrl()}${endpoint}`, {
+  const response = await fetch(`/api/${endpoint}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
