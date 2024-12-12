@@ -4,5 +4,8 @@
       "source": "/api/:path*",
       "destination": "http://45.146.7.38:3005/:path*"
     }
-  ]
+  ],
+  "protection": {
+    "ignore": ["/api/:path*"]
+  }
 }
