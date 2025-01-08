@@ -1,5 +1,5 @@
 import { CarWriter } from '@ipld/car/writer';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useState } from 'react';
 import { useHelia } from './useHelia';
 import { carWriterOutToBlob, downloadCarFile, readFileAsUint8Array } from './utils';
@@ -9,11 +9,30 @@ function FolderUploader() {
   const [files, setFiles] = useState([]);
   const [carBlob, setCarBlob] = useState(null);
   const [rootCID, setRootCID] = useState(null);
+  const [uploadResponse, setUploadResponse] = useState(null);
 
   const handleFileEvent = useCallback((e) => {
     const filesToUpload = [...e.target.files];
     setFiles(filesToUpload);
   }, []);
+
+  const kuboIpfsAddMutation = useMutation({
+    mutationFn: async (data) => {
+      const formData = new FormData();
+      formData.append('file', data);
+      const response = await fetch('http://127.0.0.1:5001/api/v0/add', {
+        method: 'POST',
+        body: formData,
+      });
+      if (!response.ok) {
+        throw new Error('Error uploading to IPFS');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setUploadResponse(data);
+    },
+  });
 
   const carBlobFolderQuery = useQuery({
     enabled: fs !== null && heliaCar !== null && files.length > 0,
@@ -52,12 +71,19 @@ function FolderUploader() {
     } else {
       setCarBlob(null);
       setRootCID(null);
+      setUploadResponse(null);
     }
   }, [carBlobFolderQuery.data]);
 
   const handleDownload = useCallback(() => {
     downloadCarFile(carBlob);
   }, [carBlob]);
+
+  const handleUploadToIPFS = useCallback(() => {
+    if (carBlob) {
+      kuboIpfsAddMutation.mutate(carBlob);
+    }
+  }, [carBlob, kuboIpfsAddMutation]);
 
   let statusColor = 'is-success';
   if (error) {
@@ -98,14 +124,30 @@ function FolderUploader() {
                   readOnly
                 />
               </div>
-              <button
-                type="button"
-                className={`button is-link ${carBlobFolderQuery.isPending ? 'is-loading' : ''}`}
-                disabled={!carBlob}
-                onClick={handleDownload}
-              >
-                Download Car file
-              </button>
+              <div className="buttons">
+                <button
+                  type="button"
+                  className={`button is-link ${carBlobFolderQuery.isPending ? 'is-loading' : ''}`}
+                  disabled={!carBlob}
+                  onClick={handleDownload}
+                >
+                  Download Car file
+                </button>
+                <button
+                  type="button"
+                  className={`button is-link ${kuboIpfsAddMutation.isPending ? 'is-loading' : ''}`}
+                  disabled={!carBlob || kuboIpfsAddMutation.isPending}
+                  onClick={handleUploadToIPFS}
+                >
+                  Add directory to IPFS
+                </button>
+              </div>
+              {uploadResponse ? (
+                <pre className="mt-4">{JSON.stringify(uploadResponse, null, 2)}</pre>
+              ) : null}
+              {kuboIpfsAddMutation.isError ? (
+                <p className="has-text-danger">{kuboIpfsAddMutation.error?.message}</p>
+              ) : null}
             </>
           )}
         </div>
