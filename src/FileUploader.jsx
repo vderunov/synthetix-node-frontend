@@ -10,17 +10,18 @@ function FileUploader() {
   const [carBlob, setCarBlob] = useState(null);
   const [rootCID, setRootCID] = useState(null);
   const [uploadResponse, setUploadResponse] = useState(null);
+  const [dagData, setDagData] = useState(null);
 
   const handleFileEvent = useCallback((e) => {
     const filesToUpload = [...e.target.files];
     setFiles(filesToUpload);
   }, []);
 
-  const kuboIpfsAddMutation = useMutation({
+  const kuboIpfsDagImportMutation = useMutation({
     mutationFn: async (data) => {
       const formData = new FormData();
       formData.append('file', data);
-      const response = await fetch('http://127.0.0.1:5001/api/v0/add', {
+      const response = await fetch('http://127.0.0.1:5001/api/v0/dag/import', {
         method: 'POST',
         body: formData,
       });
@@ -31,6 +32,21 @@ function FileUploader() {
     },
     onSuccess: (data) => {
       setUploadResponse(data);
+    },
+  });
+
+  const kuboIpfsDagGetMutation = useMutation({
+    mutationFn: async (rootCID) => {
+      const response = await fetch(`http://127.0.0.1:5001/api/v0/dag/get?arg=${rootCID}`, {
+        method: 'POST',
+      });
+      if (!response.ok) {
+        throw new Error('DAG fetch failed');
+      }
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setDagData(data);
     },
   });
 
@@ -66,6 +82,7 @@ function FileUploader() {
       setCarBlob(null);
       setRootCID(null);
       setUploadResponse(null);
+      setDagData(null);
     }
   }, [carBlobFilerQuery.data]);
 
@@ -75,9 +92,9 @@ function FileUploader() {
 
   const handleUploadToIPFS = useCallback(() => {
     if (carBlob) {
-      kuboIpfsAddMutation.mutate(carBlob);
+      kuboIpfsDagImportMutation.mutate(carBlob);
     }
-  }, [carBlob, kuboIpfsAddMutation]);
+  }, [carBlob, kuboIpfsDagImportMutation]);
 
   let statusColor = 'is-success';
   if (error) {
@@ -133,18 +150,29 @@ function FileUploader() {
                 </button>
                 <button
                   type="button"
-                  className={`button is-link ${kuboIpfsAddMutation.isPending ? 'is-loading' : ''}`}
-                  disabled={!carBlob || kuboIpfsAddMutation.isPending}
+                  className={`button is-link ${kuboIpfsDagImportMutation.isPending ? 'is-loading' : ''}`}
+                  disabled={!carBlob || kuboIpfsDagImportMutation.isPending}
                   onClick={handleUploadToIPFS}
                 >
                   Add file to IPFS
+                </button>
+                <button
+                  type="button"
+                  className={`button is-link ${kuboIpfsDagGetMutation.isPending ? 'is-loading' : ''}`}
+                  disabled={!uploadResponse || kuboIpfsDagGetMutation.isPending}
+                  onClick={() => {
+                    kuboIpfsDagGetMutation.mutate(uploadResponse.Root.Cid['/']);
+                  }}
+                >
+                  Get DAG Object
                 </button>
               </div>
               {uploadResponse ? (
                 <pre className="mt-4">{JSON.stringify(uploadResponse, null, 2)}</pre>
               ) : null}
-              {kuboIpfsAddMutation.isError ? (
-                <p className="has-text-danger">{kuboIpfsAddMutation.error?.message}</p>
+              {dagData ? <pre className="mt-4">{JSON.stringify(dagData, null, 2)}</pre> : null}
+              {kuboIpfsDagImportMutation.isError ? (
+                <p className="has-text-danger">{kuboIpfsDagImportMutation.error?.message}</p>
               ) : null}
             </>
           )}
