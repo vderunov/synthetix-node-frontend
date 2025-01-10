@@ -4,6 +4,7 @@ import { ethers } from 'ethers';
 import React, { useEffect } from 'react';
 import ReactDOM from 'react-dom/client';
 import { App } from './App';
+import { HeliaProvider } from './HeliaProvider';
 import { SynthetixProvider, useSynthetix } from './useSynthetix';
 import { restoreToken } from './utils';
 
@@ -105,7 +106,9 @@ async function run() {
       >
         <WalletWatcher>
           <QueryClientProvider client={queryClient}>
-            <App />
+            <HeliaProvider>
+              <App />
+            </HeliaProvider>
             {process.env.NODE_ENV === 'test' ? null : <ReactQueryDevtools client={queryClient} />}
           </QueryClientProvider>
         </WalletWatcher>

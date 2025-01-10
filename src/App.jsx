@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import AccessControl from './AccessControl';
+import FileUploader from './FileUploader';
+import FolderUploader from './FolderUploader';
 import NetworkMismatchBanner from './NetworkMismatchBanner';
 import usePermissions from './usePermissions';
 import { useSynthetix } from './useSynthetix';
@@ -153,45 +155,77 @@ export function App() {
 
       {walletAddress && token ? <AccessControl /> : null}
 
+      {permissions.data.isGranted && token ? (
+        <>
+          <FolderUploader />
+          <FileUploader />
+        </>
+      ) : null}
+
       <section className="section">
         <div className="container">
           {permissions.isFetching ? (
             <div className="skeleton-block" />
           ) : permissions.data.isGranted && token ? (
-            <div className="box">
-              <form onSubmit={handleFileUploadSubmit}>
-                <div className="file has-name">
-                  <label className="file-label">
+            <>
+              <div className="box">
+                <form onSubmit={handleFileUploadSubmit}>
+                  <div className="file has-name">
+                    <label className="file-label">
+                      <input
+                        className="file-input"
+                        type="file"
+                        onChange={({ target }) => {
+                          setSelectedFile(target.files[0]);
+                          setFileName(target.files[0]?.name);
+                        }}
+                      />
+                      <span className="file-cta">
+                        <span className="file-label">Choose a file…</span>
+                      </span>
+                      <span className="file-name">{fileName}</span>
+                    </label>
+                  </div>
+                  <div className="control">
+                    <button
+                      type="submit"
+                      className={`button is-link ${
+                        kuboIpfsAddMutation.isPending ? 'is-skeleton' : ''
+                      }`}
+                      disabled={!selectedFile}
+                    >
+                      Submit
+                    </button>
+                  </div>
+                </form>
+                {uploadResponse ? (
+                  <pre className="mt-4">{JSON.stringify(uploadResponse, null, 2)}</pre>
+                ) : null}
+
+                <form onSubmit={handleKuboIpfsCatFileSubmit} className="mt-5">
+                  <div className="field">
+                    <label className="label">IPFS hash(CID)</label>
                     <input
-                      className="file-input"
-                      type="file"
-                      onChange={({ target }) => {
-                        setSelectedFile(target.files[0]);
-                        setFileName(target.files[0]?.name);
-                      }}
+                      className="input"
+                      type="text"
+                      placeholder="Example: QmRjX3..."
+                      value={hash}
+                      onChange={({ target }) => setHash(target.value)}
                     />
-                    <span className="file-cta">
-                      <span className="file-label">Choose a file…</span>
-                    </span>
-                    <span className="file-name">{fileName}</span>
-                  </label>
-                </div>
-                <div className="control">
+                    {kuboIpfsCatFile.isError ? (
+                      <p className="help is-danger">{kuboIpfsCatFile.error.message}</p>
+                    ) : null}
+                  </div>
                   <button
                     type="submit"
-                    className={`button is-link ${
-                      kuboIpfsAddMutation.isPending ? 'is-skeleton' : ''
-                    }`}
-                    disabled={!selectedFile}
+                    className={`button is-link ${kuboIpfsCatFile.isFetching ? 'is-skeleton' : ''}`}
+                    disabled={!hash}
                   >
-                    Submit
+                    Download
                   </button>
-                </div>
-              </form>
-              {uploadResponse ? (
-                <pre className="mt-4">{JSON.stringify(uploadResponse, null, 2)}</pre>
-              ) : null}
-            </div>
+                </form>
+              </div>
+            </>
           ) : (
             <div className="box">
               <h2 className="subtitle">
@@ -201,37 +235,6 @@ export function App() {
           )}
         </div>
       </section>
-
-      {permissions.data.isGranted && token ? (
-        <section className="section">
-          <div className="container">
-            <div className="box">
-              <form onSubmit={handleKuboIpfsCatFileSubmit}>
-                <div className="field">
-                  <label className="label">IPFS hash(CID)</label>
-                  <input
-                    className="input"
-                    type="text"
-                    placeholder="Example: QmRjX3..."
-                    value={hash}
-                    onChange={({ target }) => setHash(target.value)}
-                  />
-                  {kuboIpfsCatFile.isError ? (
-                    <p className="help is-danger">{kuboIpfsCatFile.error.message}</p>
-                  ) : null}
-                </div>
-                <button
-                  type="submit"
-                  className={`button is-link ${kuboIpfsCatFile.isFetching ? 'is-skeleton' : ''}`}
-                  disabled={!hash}
-                >
-                  Download
-                </button>
-              </form>
-            </div>
-          </div>
-        </section>
-      ) : null}
     </>
   );
 }

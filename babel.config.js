@@ -7,7 +7,7 @@ module.exports = {
         [
           require.resolve('@babel/preset-env'),
           {
-            modules: 'commonjs',
+            modules: 'auto',
             targets: { browsers: ['last 1 Chrome version'] },
           },
         ],
@@ -19,7 +19,7 @@ module.exports = {
         [
           require.resolve('@babel/preset-env'),
           {
-            modules: 'commonjs',
+            modules: 'auto',
             targets: { browsers: ['last 1 Chrome version'] },
           },
         ],
@@ -32,7 +32,7 @@ module.exports = {
         [
           require.resolve('@babel/preset-env'),
           {
-            modules: 'commonjs',
+            modules: 'auto',
             targets: { node: 'current' },
           },
         ],
